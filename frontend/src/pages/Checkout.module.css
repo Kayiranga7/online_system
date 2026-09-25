@@ -1,0 +1,25 @@
+.page { padding: var(--space-6) 0 var(--space-8); }
+.layout { display: grid; grid-template-columns: 1fr 320px; gap: var(--space-6); align-items: start; }
+@media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
+
+.steps { display: flex; gap: 0; margin-bottom: var(--space-5); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-line); }
+.step { flex: 1; padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 600; text-align: center; background: var(--color-cream); color: var(--color-charcoal-soft); transition: all 0.2s ease; }
+.stepActive { background: var(--color-forest); color: white; box-shadow: 0 2px 8px rgba(13, 79, 60, 0.3); }
+.stepDone { background: var(--color-moss); color: white; }
+
+.formCard { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+.formTitle { font-size: 1.15rem; font-weight: 700; color: var(--color-forest); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-line); }
+.field { display: flex; flex-direction: column; }
+.checkRow { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; cursor: pointer; }
+
+.methodGrid { display: flex; flex-direction: column; gap: var(--space-3); }
+.methodCard { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4); border: 1.5px solid var(--color-line); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s ease; }
+.methodCard:hover { border-color: var(--color-forest); background: rgba(13, 79, 60, 0.02); }
+.methodCardActive { border-color: var(--color-forest); background: rgba(13, 79, 60, 0.05); box-shadow: 0 0 0 3px rgba(13, 79, 60, 0.08); }
+.methodLabel { font-weight: 600; font-size: 0.9rem; color: var(--color-charcoal); }
+.methodNote { font-size: 0.75rem; color: var(--color-charcoal-soft); margin-top: 2px; }
+.stripeFields { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.sidebar { padding: var(--space-5); position: sticky; top: 80px; display: flex; flex-direction: column; gap: var(--space-4); }
+.summRow { display: flex; justify-content: space-between; font-size: 0.88rem; color: var(--color-charcoal-soft); }
+.summTotal { font-size: 1.05rem; font-weight: 700; color: var(--color-charcoal); padding-top: var(--space-4); border-top: 2px solid var(--color-forest); }

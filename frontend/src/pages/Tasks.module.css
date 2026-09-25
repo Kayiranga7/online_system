@@ -1,0 +1,19 @@
+.page { padding: var(--space-6) 0 var(--space-8); }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-5); gap: var(--space-4); flex-wrap: wrap; }
+.heading { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; }
+.headerActions { display: flex; gap: var(--space-3); align-items: center; }
+
+.createForm { padding: var(--space-5); margin-bottom: var(--space-5); }
+.sectionTitle { font-size: 1.05rem; font-weight: 700; color: var(--color-forest); margin-bottom: var(--space-4); }
+.formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.field { display: flex; flex-direction: column; }
+.span2 { grid-column: span 2; }
+@media (max-width: 640px) { .formGrid { grid-template-columns: 1fr; } .span2 { grid-column: span 1; } }
+
+.tableCard { padding: 0; overflow: hidden; }
+.tableWrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; }
+.th { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-charcoal-soft); padding: 0.85rem 1rem; text-align: left; border-bottom: 1.5px solid var(--color-line); background: var(--color-sage); }
+.tr:hover { background: rgba(13, 79, 60, 0.03); }
+.td { padding: 0.85rem 1rem; font-size: 0.88rem; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); padding: var(--space-8) 0; color: var(--color-charcoal-soft); }

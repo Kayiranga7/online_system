@@ -1,0 +1,18 @@
+.wrap { display: flex; flex-direction: column; gap: var(--space-3); }
+.field { display: flex; align-items: center; gap: var(--space-2); }
+.dropLabel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1.5px dashed var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--color-charcoal-soft);
+  cursor: pointer;
+  transition: border-color 0.14s;
+}
+.dropLabel:hover { border-color: var(--color-moss); }
+.clearBtn { background: none; border: none; color: var(--color-charcoal-soft); padding: 0.3rem; }
+.note { font-size: 0.78rem; color: var(--color-charcoal-soft); line-height: 1.5; }

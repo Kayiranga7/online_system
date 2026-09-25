@@ -1,0 +1,45 @@
+.page { padding: var(--space-6) 0 var(--space-8); }
+
+.recSection { margin-bottom: var(--space-7); }
+.recTitle {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 1.15rem; font-weight: 700; color: var(--color-forest);
+  margin-bottom: var(--space-4);
+}
+.recGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.catalogHeader {
+  display: flex; flex-wrap: wrap; align-items: flex-end;
+  justify-content: space-between; gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.catalogTitle { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; }
+.catalogSub { color: var(--color-charcoal-soft); font-size: 0.88rem; margin-top: 0.25rem; }
+.searchRow { display: flex; gap: var(--space-3); align-items: center; }
+.searchWrap { position: relative; }
+.searchIcon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--color-charcoal-soft); }
+.searchInput { padding-left: 2.25rem; width: 220px; }
+.filterBtnActive { background: var(--color-forest); color: white; border-color: var(--color-forest); }
+
+.filtersCard {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--space-3); padding: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.loadingWrap { display: flex; justify-content: center; padding: var(--space-8) 0; }
+.empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--space-4); padding: var(--space-8) 0;
+  color: var(--color-charcoal-soft); text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-5);
+}
