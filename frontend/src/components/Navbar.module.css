@@ -2,9 +2,11 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--color-forest);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.15);
+  background: var(--color-navbar);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 1px 24px rgba(0, 0, 0, 0.18);
 }
 
 .inner {
@@ -24,40 +26,70 @@
   color: var(--color-cream);
   flex-shrink: 0;
 }
+.logoMark {
+  font-size: 1.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(110, 231, 183, 0.45));
+}
 .logoText {
   font-family: var(--font-display);
   font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--color-cream);
+  background: linear-gradient(92deg, #FFFFFF 30%, #86EFAC 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
-.logoSub {
-  font-size: 0.65rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  display: none;
-}
-@media (min-width: 640px) { .logoSub { display: inline; } }
-
 .nav {
   display: none;
-  gap: var(--space-1);
   flex: 1;
+  min-width: 0;
+  align-items: center;
 }
 @media (min-width: 900px) { .nav { display: flex; } }
 
-.navLink {
-  padding: 0.45rem 0.9rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
-  transition: all 0.2s ease;
+/* Capsule track that groups the primary links into one control */
+.navTrack {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-.navLink:hover { background: rgba(255,255,255,0.1); color: #fff; }
-.navLinkActive { color: #fff; font-weight: 600; background: rgba(255,255,255,0.12); }
+
+.navLink {
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.68);
+  white-space: nowrap;
+  transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.navLink:hover { background: rgba(255,255,255,0.09); color: #fff; }
+.navLink:focus-visible { outline: 2px solid #86EFAC; outline-offset: 2px; }
+.navLinkActive,
+.navLinkActive:hover {
+  color: var(--color-white);
+  font-weight: 600;
+  background: var(--gradient-primary);
+  box-shadow: 0 2px 10px rgba(21, 128, 61, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* Off-screen twin of the track: supplies natural link widths to the collapse
+   calculation and stands in for the menu button's reserved width. */
+.measure {
+  position: absolute;
+  top: 0;
+  left: -9999px;
+  visibility: hidden;
+  pointer-events: none;
+}
 
 .actions {
   display: flex;
@@ -80,6 +112,67 @@
 }
 .iconBtn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
+/* Gives the theme button a single unambiguous target for the phone-width rule
+   at the end of this file. */
+.themeBtn { flex-shrink: 0; }
+
+/* --- Language switcher --- */
+.langWrap { position: relative; }
+
+.langBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.85);
+  padding: 0.4rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: all 0.2s ease;
+}
+.langBtn:hover { background: rgba(255,255,255,0.14); color: #fff; border-color: rgba(255,255,255,0.3); }
+
+.langCode { display: none; }
+@media (min-width: 640px) { .langCode { display: inline; } }
+
+.chevronUp { transform: rotate(180deg); transition: transform 0.15s ease; }
+
+.langMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--menu-bg);
+  -webkit-backdrop-filter: var(--menu-blur);
+  backdrop-filter: var(--menu-blur);
+  border: 1px solid var(--menu-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--menu-shadow);
+  min-width: 170px;
+  overflow: hidden;
+  animation: dropIn 0.2s var(--ease-spring);
+  z-index: 1000;
+}
+
+.langItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.65rem 0.95rem;
+  font-size: 0.87rem;
+  color: var(--color-charcoal);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: background 0.13s ease;
+}
+.langItem:hover { background: var(--accent-soft); }
+.langItemActive { font-weight: 700; color: var(--color-forest); }
+
 .badge {
   position: absolute;
   top: 2px;
@@ -95,7 +188,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  border: 1.5px solid var(--color-forest);
+  border: 1.5px solid var(--color-navbar);
 }
 
 .notifWrap { position: relative; }
@@ -121,14 +214,14 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--color-terracotta);
+  background: var(--gradient-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 0.8rem;
-  color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: var(--color-white);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .userName { display: none; }
@@ -138,16 +231,18 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: var(--color-cream);
-  border: 1px solid var(--color-line);
+  background: var(--menu-bg);
+  -webkit-backdrop-filter: var(--menu-blur);
+  backdrop-filter: var(--menu-blur);
+  border: 1px solid var(--menu-border);
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--menu-shadow);
   min-width: 200px;
   overflow: hidden;
-  animation: dropIn 0.18s ease;
+  animation: dropIn 0.2s var(--ease-spring);
   z-index: 1000;
 }
-@keyframes dropIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; } }
+@keyframes dropIn { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 .dropItem {
   display: flex;
@@ -162,42 +257,248 @@
   text-align: left;
   transition: all 0.15s ease;
 }
-.dropItem:hover { background: var(--color-sage); }
+.dropItem:hover { background: var(--accent-soft); }
 .dropItemDanger { color: var(--color-danger); }
 .dropDivider { height: 1px; background: var(--color-line); margin: 4px 0; }
 
-.authLinks { display: flex; gap: var(--space-2); }
+/* --- Auth actions (guest) --- */
+.authLinks {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.signInLink {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  transition: all 0.2s var(--ease-spring);
+  white-space: nowrap;
+}
+.signInLink:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+.registerBtn {
+  padding: 0.5rem 1.15rem;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--color-white);
+  background: var(--gradient-primary);
+  border: 1px solid transparent;
+  box-shadow: 0 2px 10px rgba(21, 128, 61, 0.35);
+  transition: all 0.2s var(--ease-spring);
+  white-space: nowrap;
+}
+.registerBtn:hover {
+  background: var(--gradient-primary-hover);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 480px) {
+  .signInLink { padding: 0.4rem 0.65rem; font-size: 0.8rem; }
+  .registerBtn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+}
 
 .mobileToggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
   color: var(--color-cream);
-  padding: 0.4rem;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
-@media (min-width: 900px) { .mobileToggle { display: none; } }
+.mobileToggle:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+.mobileToggle:focus-visible { outline: 2px solid #86EFAC; outline-offset: 2px; }
 
+/* Click-away layer. It sits in the sticky header, which is its containing
+   block (backdrop-filter makes it one even for fixed children). */
+.scrim {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  background: rgba(4, 12, 8, 0.5);
+  animation: scrimIn 0.2s ease;
+}
+@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Menu sheet: full width under the bar on small screens, a floating card
+   beside it once the bar itself has room. */
 .mobileNav {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  background: var(--color-forest);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  padding: var(--space-3) 0;
+  gap: 0.1rem;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--color-navbar);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow: 0 26px 50px rgba(0, 0, 0, 0.4);
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: sheetIn 0.22s var(--ease-spring);
 }
-@media (min-width: 900px) { .mobileNav { display: none; } }
+@keyframes sheetIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (min-width: 900px) {
+  .mobileNav {
+    top: calc(100% + 10px);
+    left: auto;
+    right: var(--space-5);
+    width: 300px;
+    padding: var(--space-2);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-lg);
+    animation: menuIn 0.18s var(--ease-spring);
+  }
+  .scrim { background: rgba(4, 12, 8, 0.35); }
+}
 
 .mobileLink {
-  display: block;
-  padding: 0.8rem var(--space-5);
-  color: rgba(250,247,240,0.85);
-  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-md);
+  color: rgba(250, 250, 250, 0.85);
+  font-size: 0.92rem;
   font-weight: 500;
   background: transparent;
   border: none;
+  width: 100%;
   text-align: left;
-  transition: background 0.12s;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.mobileLink:hover { background: rgba(255,255,255,0.06); color: var(--color-cream); }
-.mobileDanger { color: #f87171; }
+.mobileLink:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.mobileLinkActive { background: rgba(16, 185, 129, 0.16); color: #fff; font-weight: 600; }
+.mobileIcon { display: inline-flex; color: rgba(167, 243, 208, 0.9); flex-shrink: 0; }
+.mobileLabel { flex: 1; }
+.mobileChevron { opacity: 0.35; flex-shrink: 0; }
+.mobileDanger { color: var(--color-danger); }
+.mobileDanger .mobileIcon { color: var(--color-danger); }
+
+/* --- Mobile language row --- */
+.mobileLangRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.4rem 0.8rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 0.5rem;
+  color: rgba(255,255,255,0.7);
+}
+.mobileLangLabel { font-size: 0.85rem; font-weight: 600; }
+.mobileLangOptions { display: flex; gap: 0.4rem; margin-left: auto; }
+.mobileLangOpt {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: rgba(255,255,255,0.75);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: all 0.15s ease;
+}
+.mobileLangOpt:hover { background: rgba(255,255,255,0.1); }
+.mobileLangOptActive {
+  background: var(--gradient-primary);
+  color: var(--color-white);
+  border-color: transparent;
+}
+
+/* --- Mobile auth row --- */
+/* Off unless the phone-width rule below turns it on: at any roomier size the
+   bar itself carries these two links, so the sheet would only repeat them. */
+.mobileAuthRow {
+  display: none;
+  gap: var(--space-3);
+  padding: 0.8rem var(--space-4) 0.4rem;
+}
+.mobileSignIn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.mobileSignIn:hover { background: rgba(255,255,255,0.12); }
+
+/* Gradient hairline under the sticky bar for a lit edge */
+.header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(167, 243, 208, 0.3), transparent);
+  pointer-events: none;
+}
+.mobileRegister {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0;
+  border-radius: var(--radius-sm);
+  background: var(--gradient-primary);
+  color: var(--color-white);
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(21, 128, 61, 0.35);
+}
+.mobileRegister:hover { background: var(--color-forest-light); }
+[data-theme='dark'] .mobileRegister:hover { color: var(--on-solid); }
+
+/* Phone widths: the bar keeps only what the sheet cannot carry for it. The
+   language switch and the theme choice are full rows in the sheet, and Sign in
+   sits under the sheet's own auth row, so none of them needs to hold bar space
+   alongside the logo, the account items and the menu button. Register stays,
+   because it is the guest's primary action. Kept at the end of the file so
+   these rules land after the components they override. */
+@media (max-width: 559.98px) {
+  .inner { gap: var(--space-2); padding: 0 var(--space-4); }
+  .langWrap { display: none; }
+  .themeBtn { display: none; }
+  .signInLink { display: none; }
+  .mobileRegister { display: none; }
+  .mobileAuthRow { display: flex; padding: 0.8rem var(--space-3) 0.4rem; }
+}

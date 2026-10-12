@@ -2,8 +2,31 @@
 .layout { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); margin-bottom: var(--space-6); }
 @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
 
-.imageCol { border-radius: var(--radius-lg); overflow: hidden; background: var(--color-sage); aspect-ratio: 1; box-shadow: var(--shadow-lg); }
-.mainImg { width: 100%; height: 100%; object-fit: cover; }
+.imageCol {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-sage);
+  aspect-ratio: 1;
+  box-shadow: var(--shadow-lg);
+}
+.mainImg { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s var(--ease-spring); }
+.imageCol:hover .mainImg { transform: scale(1.03); }
+/* Theme-aware vignette: light scrim in light mode, deep green-black in dark */
+.imageCol::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 62%, var(--scrim-vignette, rgba(11, 30, 20, 0.35)) 100%),
+    radial-gradient(120% 100% at 50% 0%, transparent 60%, rgba(11, 30, 20, 0.12) 100%);
+}
+[data-theme='dark'] .imageCol::after {
+  background:
+    linear-gradient(180deg, transparent 60%, rgba(6, 14, 9, 0.45) 100%),
+    radial-gradient(120% 100% at 50% 0%, transparent 58%, rgba(6, 14, 9, 0.18) 100%);
+}
 
 .infoCol { display: flex; flex-direction: column; }
 .category { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-forest); margin-bottom: 0.5rem; }
@@ -25,7 +48,8 @@
 .qtyRow button:hover { color: var(--color-forest-light); }
 
 .reviews { display: flex; flex-direction: column; gap: var(--space-4); max-width: 700px; }
-.review { padding: var(--space-5); background: var(--color-cream); border: 1px solid var(--color-line); border-radius: var(--radius-md); }
+.review { padding: var(--space-5); background: var(--color-cream); border: 1px solid var(--color-line); border-radius: var(--radius-md); transition: border-color 0.2s ease, box-shadow 0.25s var(--ease-spring); }
+.review:hover { border-color: var(--color-line-strong); box-shadow: var(--shadow-sm); }
 .reviewHeader { display: flex; align-items: center; gap: var(--space-3); margin-bottom: 0.5rem; font-size: 0.9rem; flex-wrap: wrap; }
 .reviewStars { color: var(--color-gold); margin-left: auto; }
 

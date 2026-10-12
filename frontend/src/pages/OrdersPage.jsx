@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { StatusBadge, SkeletonTable, Pagination, toast } from '../components/UI';
 import styles from './Orders.module.css';
 
@@ -10,6 +11,7 @@ const STATUS_OPTS = ['pending_payment','paid','processing','assigned','in_progre
 
 export default function OrdersPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ export default function OrdersPage() {
     setLoading(true);
     api.get(`/orders?${params}`)
       .then((r) => { setOrders(r.data.orders || []); setTotal(r.data.pagination?.total || 0); })
-      .catch(() => toast('Failed to load orders.', 'error'))
+      .catch(() => toast(t('orders.loadFailed'), 'error'))
       .finally(() => setLoading(false));
   }, [page, statusFilter]);
 
@@ -32,10 +34,10 @@ export default function OrdersPage() {
       <div className="container">
         <div className={styles.header}>
           <h1 className={styles.heading}>
-            {user?.role === 'customer' ? 'My orders' : 'Orders'}
+            {user?.role === 'customer' ? t('orders.myOrders') : t('orders.title')}
           </h1>
           <select className="input" style={{ width: 'auto' }} value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
-            <option value="">All statuses</option>
+            <option value="">{t('orders.allStatuses')}</option>
             {STATUS_OPTS.map((s) => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
           </select>
         </div>
@@ -44,9 +46,9 @@ export default function OrdersPage() {
           <SkeletonTable rows={5} cols={6} />
         ) : orders.length === 0 ? (
           <div className={styles.empty}>
-            <ShoppingBag size={40} color="var(--color-line)" />
-            <p>No orders found.</p>
-            {user?.role === 'customer' && <Link to="/plants" className="btn btn-primary">Shop now</Link>}
+            <div className={styles.emptyIcon}><ShoppingBag size={30} /></div>
+            <p className={styles.emptyTitle}>{t('orders.empty')}</p>
+            {user?.role === 'customer' && <Link to="/plants" className="btn btn-primary">{t('orders.shopNow')}</Link>}
           </div>
         ) : (
           <>
@@ -55,18 +57,18 @@ export default function OrdersPage() {
                 <table className={styles.table}>
                   <thead>
                     <tr>
-                      <th className={styles.th}>Order #</th>
-                      {user?.role !== 'customer' && <th className={styles.th}>Customer</th>}
-                      {user?.role !== 'customer' && <th className={styles.th}>District</th>}
-                      <th className={styles.th}>Status</th>
-                      <th className={styles.th} style={{ textAlign: 'right' }}>Total</th>
-                      <th className={styles.th}>Date</th>
+                      <th className={styles.th}>{t('orders.orderNumber')}</th>
+                      {user?.role !== 'customer' && <th className={styles.th}>{t('dash.customer')}</th>}
+                      {user?.role !== 'customer' && <th className={styles.th}>{t('orders.district')}</th>}
+                      <th className={styles.th}>{t('dash.status')}</th>
+                      <th className={styles.th} style={{ textAlign: 'right' }}>{t('dash.total')}</th>
+                      <th className={styles.th}>{t('orders.date')}</th>
                       <th className={styles.th}></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((o) => (
-                      <tr key={o.id} className={styles.tr}>
+                    {orders.map((o, i) => (
+                      <tr key={o.id} className={`${styles.tr} row-in`} style={{ '--stagger-i': i }}>
                         <td className={styles.td}><span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}>{o.order_number}</span></td>
                         {user?.role !== 'customer' && <td className={styles.td}>{o.customer_name}</td>}
                         {user?.role !== 'customer' && <td className={styles.td}>{o.district_name}</td>}
@@ -77,7 +79,7 @@ export default function OrdersPage() {
                         </td>
                         <td className={styles.td}>
                           <Link to={`/orders/${o.id}`} className="btn btn-ghost" style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem' }}>
-                            View →
+                            {t('ui.view')} →
                           </Link>
                         </td>
                       </tr>

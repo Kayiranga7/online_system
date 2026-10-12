@@ -34,8 +34,11 @@ const resetPasswordValidator = [
 ];
 
 const updateProfileValidator = [
-  body('fullName').trim().isLength({ min: 2, max: 150 }).withMessage('Full name is required.'),
+  // All fields optional: the language switcher PATCHes { language } alone,
+  // while the profile form PATCHes the full set.
+  body('fullName').optional({ checkFalsy: true }).trim().isLength({ min: 2, max: 150 }).withMessage('Full name is required.'),
   body('phoneNumber').optional({ checkFalsy: true }).isMobilePhone('any').withMessage('Invalid phone number.'),
+  body('language').optional().isIn(['en', 'rw', 'fr']).withMessage('Unsupported language.'),
 ];
 
 const updatePasswordValidator = [

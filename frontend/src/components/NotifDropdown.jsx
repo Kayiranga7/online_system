@@ -7,7 +7,7 @@ import styles from './NotifDropdown.module.css';
 const CATEGORY_COLORS = {
   order_update: 'var(--color-forest)',
   payment: 'var(--color-gold)',
-  task_assignment: 'var(--color-terracotta)',
+  task_assignment: 'var(--accent-strong)',
   system_alert: 'var(--color-danger)',
   transfer_request: 'var(--color-moss)',
 };

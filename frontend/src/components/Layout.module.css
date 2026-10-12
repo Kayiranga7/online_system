@@ -1,0 +1,8 @@
+.stageEnter {
+  opacity: 1;
+}
+
+.stageExit {
+  /* Keep the outgoing page invisible to clicks while it animates away */
+  pointer-events: none;
+}

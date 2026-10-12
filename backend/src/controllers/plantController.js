@@ -12,8 +12,20 @@ async function listPlants(req, res, next) {
     const params = [];
 
     if (search) {
-      conditions.push('MATCH(p.name, p.scientific_name, p.description) AGAINST (? IN NATURAL LANGUAGE MODE)');
-      params.push(search);
+      // Per-word substring match, words ANDed together: "pal" finds "palm tree",
+      // and multi-word queries narrow results instead of widening them (the
+      // previous MATCH ... AGAINST in NATURAL LANGUAGE mode OR-matched whole
+      // words, ignored prefixes and ignored words shorter than the token size).
+      const words = String(search).trim().split(/\s+/).filter(Boolean);
+      if (words.length) {
+        conditions.push(
+          '(' + words.map(() => '(p.name LIKE ? OR p.scientific_name LIKE ? OR p.description LIKE ?)').join(' AND ') + ')'
+        );
+        for (const w of words) {
+          const like = `%${w.replace(/[\\%_]/g, '\\$&')}%`;
+          params.push(like, like, like);
+        }
+      }
     }
     if (categoryId) {
       conditions.push('p.category_id = ?');

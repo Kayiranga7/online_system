@@ -16,7 +16,6 @@ export default function MediaManager({ itemType, itemId, onSaved }) {
   const [uploading, setUploading] = useState(false);
 
   const imagesEndpoint = itemType === 'plant' ? '/plants' : '/designs';
-  const tableNote = itemType === 'plant' ? 'plant_images' : 'design_images';
 
   const handleUpload = async () => {
     if (!imageFile && !modelFile) {

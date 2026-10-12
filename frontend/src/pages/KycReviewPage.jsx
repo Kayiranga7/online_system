@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ShieldCheck, CheckCircle, XCircle, Eye, Loader2, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { toast } from '../components/UI';
+import { openKycDocument } from '../utils/kycDocuments';
 
 const DOC_TYPES = {
   national_id: 'National ID',
@@ -12,10 +12,9 @@ const DOC_TYPES = {
   other: 'Other',
 };
 
-const STATUS_COLORS = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444' };
+const STATUS_COLORS = { pending: 'var(--color-warning)', approved: 'var(--color-success)', rejected: 'var(--color-danger)' };
 
 export default function KycReviewPage() {
-  const navigate = useNavigate();
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -77,7 +76,7 @@ export default function KycReviewPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-        <Loader2 size={24} style={{ animation: 'spin 0.8s linear infinite', color: 'var(--color-terracotta)' }} />
+        <Loader2 size={24} style={{ animation: 'spin 0.8s linear infinite', color: 'var(--accent-strong)' }} />
       </div>
     );
   }
@@ -85,7 +84,7 @@ export default function KycReviewPage() {
   return (
     <div className="container" style={{ padding: '2rem 1rem', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-        <ShieldCheck size={28} color="var(--color-terracotta)" />
+        <ShieldCheck size={28} color="var(--accent-strong)" />
         <h1 style={{ margin: 0 }}>KYC Review</h1>
         <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal-soft)', marginLeft: 'auto' }}>
           {submissions.length} pending submission{submissions.length !== 1 ? 's' : ''}
@@ -140,7 +139,7 @@ export default function KycReviewPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: '0.4rem',
               background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--color-terracotta)', marginBottom: '1rem',
+              color: 'var(--accent-strong)', marginBottom: '1rem',
               fontSize: '0.9rem', fontWeight: 500,
             }}
           >
@@ -149,7 +148,7 @@ export default function KycReviewPage() {
 
           {docsLoading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-              <Loader2 size={20} style={{ animation: 'spin 0.8s linear infinite', color: 'var(--color-terracotta)' }} />
+              <Loader2 size={20} style={{ animation: 'spin 0.8s linear infinite', color: 'var(--accent-strong)' }} />
             </div>
           ) : (
             <div className="card" style={{ padding: '1.5rem' }}>
@@ -177,22 +176,22 @@ export default function KycReviewPage() {
                     </div>
 
                     {/* Document preview */}
-                    <a href={doc.document_url} target="_blank" rel="noopener noreferrer"
+                    <button type="button" onClick={() => openKycDocument(doc.id).catch(() => toast('Could not open this document.', 'error'))}
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                        fontSize: '0.85rem', color: 'var(--color-terracotta)',
-                        textDecoration: 'none', marginBottom: '0.75rem',
+                        fontSize: '0.85rem', color: 'var(--accent-strong)',
+                        textDecoration: 'none', marginBottom: '0.75rem', border: 0, background: 'transparent', cursor: 'pointer',
                       }}
                     >
                       <Eye size={14} /> View document
-                    </a>
+                    </button>
 
                     {/* Rejection reason from prior review */}
                     {doc.rejection_reason && (
                       <div style={{
                         fontSize: '0.8rem', color: 'var(--color-danger, #ef4444)',
                         padding: '0.5rem 0.75rem', borderRadius: 'var(--radius)',
-                        background: '#fef2f2', marginBottom: '0.75rem',
+                        background: 'var(--tile-red-soft, #fef2f2)', marginBottom: '0.75rem',
                       }}>
                         Rejected: {doc.rejection_reason}
                       </div>

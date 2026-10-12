@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Star, ShoppingCart, Heart, Sun, Droplets, Ruler } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';

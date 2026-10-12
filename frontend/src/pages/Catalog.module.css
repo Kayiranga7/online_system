@@ -21,9 +21,34 @@
 .catalogSub { color: var(--color-charcoal-soft); font-size: 0.88rem; margin-top: 0.25rem; }
 .searchRow { display: flex; gap: var(--space-3); align-items: center; }
 .searchWrap { position: relative; }
-.searchIcon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--color-charcoal-soft); }
-.searchInput { padding-left: 2.25rem; width: 220px; }
-.filterBtnActive { background: var(--color-forest); color: white; border-color: var(--color-forest); }
+.searchIcon {
+  position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+  color: var(--color-charcoal-soft); pointer-events: none;
+}
+/* Scoped through .searchWrap on purpose: the global `.input` rule in
+   tokens.css is bundled after this module and would otherwise override the
+   padding, letting the text run underneath the icon. */
+.searchWrap .searchInput { padding-right: 2.5rem; text-overflow: ellipsis; }
+.searchClear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-charcoal-soft);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.searchClear:hover { background: var(--color-clay); color: var(--color-charcoal); }
+.filterBtnActive { background: var(--color-forest); color: var(--on-solid, #fff); border-color: var(--color-forest); }
+[data-theme='dark'] .filterBtnActive { background: var(--gradient-primary); color: var(--on-solid); border-color: transparent; }
 
 .filtersCard {
   display: flex; flex-wrap: wrap; align-items: center;

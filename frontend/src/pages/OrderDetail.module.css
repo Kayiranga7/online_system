@@ -17,7 +17,8 @@
 
 .timeline { display: flex; flex-direction: column; gap: var(--space-4); }
 .timelineItem { display: flex; gap: var(--space-3); }
-.timelineDot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-forest); margin-top: 6px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(13, 79, 60, 0.15); }
+.timelineDot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-forest); margin-top: 6px; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.15); }
+[data-theme='dark'] .timelineDot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
 .sidebar { padding: var(--space-5); position: sticky; top: 80px; }
 .actionGroup { margin-bottom: var(--space-4); }

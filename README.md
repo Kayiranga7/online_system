@@ -6,7 +6,7 @@ project specification, with the role-based architecture (Admin / Manager / Emplo
 / Customer), the four functional modules, and several proposed additions to make it
 a genuinely usable system end-to-end.
 
-**Stack:** React 18 + Vite (frontend) · Node.js/Express (backend) · MySQL 8 (database) · Socket.IO (real-time) · Stripe (test-mode payments)
+**Stack:** React 18 + Vite (frontend) · Node.js/Express (backend) · MySQL 8 (database) · Socket.IO (real-time) · MTN Mobile Money (Rwanda)
 
 ---
 
@@ -30,20 +30,10 @@ a genuinely usable system end-to-end.
 - Order placement with transactional stock decrement, 18% VAT, delivery fee calculation
 - Order status state machine: `pending_payment → paid → processing → assigned →
   in_progress → delivered/installed → completed` (or `cancelled` at early stages)
-- **Stripe** — real Stripe SDK calls (PaymentIntents API), real `@stripe/react-stripe-js`
-  card confirmation on the frontend (`stripe.confirmCardPayment`), webhook handler with
-  signature verification. Needs a real `sk_test_`/`pk_test_` key pair from an actual
-  Stripe account to exercise the happy path — a placeholder key correctly fails closed
-  with a clean "payment provider not configured" error rather than a stack trace.
-- **PayPal** — real Orders v2 REST integration (OAuth2 client-credentials token,
-  create-order, capture-order), with a clearly-labeled simulation fallback when
-  `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` aren't set, so local dev works with zero
-  signup. Frontend redirects to PayPal's real approval page when sandbox creds are
-  configured, or completes instantly in simulation mode otherwise.
-- **MTN Mobile Money** — real Collections API integration (Request-to-Pay + status
-  polling) against MTN's public developer sandbox, plus a one-time provisioning
-  script (`scripts/provision-momo.js`). Same simulation fallback when no subscription
-  key is configured. Frontend polls payment status every 3s until SUCCESSFUL/FAILED.
+- **MTN Mobile Money** — Collections API Request-to-Pay and status polling, plus a
+  one-time provisioning script (`scripts/provision-momo.js`). Checkout currently
+  supports this provider only. Local payment simulation requires an explicit opt-in;
+  it is disabled in production.
 - Rule-based fraud-scoring service flags suspicious payments for Admin review
 - Rule-based "AI" plant recommendation engine (climate/district + stated preferences)
 
@@ -134,7 +124,7 @@ imizi/
 ### Prerequisites
 - Node.js 18+
 - MySQL 8+
-- (Optional) Stripe test-mode API keys for real payment-intent testing
+- (Optional) MTN MoMo sandbox credentials for real payment-request testing
 
 ### Backend
 
@@ -162,18 +152,14 @@ the Google login route simply won't work without `GOOGLE_CLIENT_ID`). The SMTP
 connection is verified at startup with a 5-6s timeout, so an unreachable/misconfigured
 SMTP host logs a warning rather than hanging the server.
 
-**Payments** work out of the box in simulation mode with zero configuration:
-- Stripe needs real `sk_test_`/`pk_test_` keys from [dashboard.stripe.com](https://dashboard.stripe.com)
-  (test mode) — without them, `createStripeIntent` fails closed with a clean error
-  rather than charging anything.
-- PayPal and MTN MoMo automatically simulate a successful payment when their
-  respective credentials aren't set, so you can test the full checkout flow without
-  signing up for either. To use real sandboxes:
-  - **PayPal**: get `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` from
-    [developer.paypal.com](https://developer.paypal.com)
-  - **MTN MoMo**: subscribe to "Collections" at
-    [momodeveloper.mtn.com](https://momodeveloper.mtn.com), set `MTN_MOMO_SUBSCRIPTION_KEY`,
-    then run `node scripts/provision-momo.js` once to generate `MTN_MOMO_API_USER`/`MTN_MOMO_API_KEY`
+**Payments:** Checkout supports MTN MoMo. To exercise the local simulated flow, set
+`PAYMENTS_SIMULATION_ENABLED=true` with `NODE_ENV=development` or `test`. Production
+always requires MTN MoMo credentials and never marks an order paid through simulation.
+For real sandbox requests, subscribe to "Collections" at
+[momodeveloper.mtn.com](https://momodeveloper.mtn.com), set `MTN_MOMO_SUBSCRIPTION_KEY`,
+then run `node scripts/provision-momo.js` to generate `MTN_MOMO_API_USER` and
+`MTN_MOMO_API_KEY`. Stripe, PayPal, and Flutterwave are not currently implemented by
+the backend and are not offered at checkout.
 
 **File storage** uses local disk by default. To use S3-compatible object storage
 instead, set `S3_BUCKET` (and `S3_ENDPOINT` for non-AWS providers like Cloudflare R2
@@ -199,45 +185,21 @@ All use password: **`Passw0rd!23`**
 
 ---
 
-## 4. Verified end-to-end (tested against a live MySQL instance during build)
+## 4. Verification status
 
-- Registration → email verification → login → JWT issuance
-- Customer: browse/filter plants → add to cart → checkout → pay (Stripe intent /
-  PayPal create+capture / MTN MoMo request-to-pay, all in simulation mode where
-  sandbox credentials weren't available) → stock decrements → order status `paid`
-- PayPal: full create-order → capture-order round trip confirmed, including the
-  ownership check (a different customer's capture attempt correctly returns 404,
-  not a generic error) and provider-failure handling (502 only for genuine PayPal
-  API errors, never masking an authorization failure)
-- Manager: progress order through `processing → assigned → in_progress → delivered`,
-  with `delivery_tracking` rows created only for physical fulfillment events
-- Manager creates & assigns a task → Employee sees it on `/employee/tasks` →
-  completes it with a work report → dashboard stats update (`tasksCompleted`)
-- Customer leaves a review on a delivered order → correctly flagged
-  `isVerifiedPurchase: true` → plant's `average_rating`/`review_count` recalculated
-- Admin: upload an image via `/api/uploads/plants` → file lands on disk through the
-  storage abstraction; attach an image + AR model URL to a plant via
-  `/api/plants/:id/images` → confirmed retrievable from the plant detail endpoint
-- Server startup: confirmed fast (~1s) when SMTP/storage are unconfigured, and
-  confirmed an unreachable SMTP host times out in ~5s rather than hanging the process
-- RBAC: employee blocked (403) from admin-only catalogue write and media uploads;
-  customer blocked (403) from manager-only user list; unauthenticated request
-  rejected (401); cross-customer payment capture attempts rejected (404)
+The current CI workflow checks frontend assets and builds the frontend. Backend
+controller tests run in CI for payment simulation behavior and KYC access controls.
+Real payment-provider and full live-MySQL checkout verification require external
+credentials and a configured database; this repository does not claim those flows
+have been exercised in this environment.
+
 
 ---
 
-## 5. Known gaps / what to wire in for production
+## 5. Known gaps / production setup
 
-- **Stripe** needs a real test-mode key pair to exercise the actual payment flow —
-  this build's environment had no live Stripe account, so the happy path (a real
-  `sk_test_...` key successfully creating and confirming a PaymentIntent) couldn't be
-  exercised end-to-end here. The integration follows Stripe's documented API exactly
-  and fails closed safely with a placeholder key; it should work immediately with
-  real credentials.
-- **PayPal & MTN Mobile Money** real sandbox flows are coded and structurally
-  verified (request shapes, OAuth2 token handling, error propagation), but the
-  actual external API calls couldn't be exercised without live sandbox credentials
-  in this environment — both fall back to a clearly-labeled simulation otherwise.
+- **Payment verification** requires MTN sandbox or production credentials to exercise
+  provider calls. Local simulation is development-only and must be explicitly enabled.
 - **AR assets**: the viewer renders any valid `.glb`/`.gltf` URL, but no real plant/
   garden 3D models ship with the seed data (a stand-in placeholder model wasn't
   bundled either, to avoid shipping irrelevant demo content). Admins attach real
@@ -248,6 +210,9 @@ All use password: **`Passw0rd!23`**
 - **S3 storage** is coded against the AWS SDK v3 client and works with any
   S3-compatible provider, but wasn't tested against a live bucket in this
   environment — local disk storage was verified end-to-end instead.
+- **KYC storage** must use a private S3 bucket policy in production. KYC objects are
+  stored without public URLs and downloaded through an authenticated, district-scoped
+  endpoint; keep the bucket itself private so bucket policies cannot bypass the app.
 - The rule-based fraud scorer and plant recommender are intentionally simple/explainable
   v1s; both are isolated in `services/` so they can be replaced with ML models later
   without touching controllers.

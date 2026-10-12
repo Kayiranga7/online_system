@@ -9,29 +9,53 @@
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
+/* Stat card: aurora glow in the corner, gradient tile icon, top-edge wash on hover */
 .statCard {
+  position: relative;
+  overflow: hidden;
   background: var(--color-cream);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.25s ease;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-spring), border-color 0.2s ease;
+}
+.statCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--aurora-card);
+  pointer-events: none;
+}
+.statCard::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 .statCard:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-md);
+  border-color: var(--color-line-strong);
 }
+.statCard:hover::after { opacity: 1; }
 .statIcon {
-  width: 50px; height: 50px;
+  position: relative;
+  width: 52px; height: 52px;
   border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  background: var(--tile, var(--tile-green-soft));
+  box-shadow: inset 0 0 0 1px var(--tile-ring, rgba(21, 128, 61, 0.14));
 }
-.statValue { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; color: var(--color-charcoal); letter-spacing: -0.02em; }
-.statLabel { font-size: 0.78rem; color: var(--color-charcoal-soft); margin-top: 2px; font-weight: 500; }
+.statValue { position: relative; font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; color: var(--color-charcoal); letter-spacing: -0.02em; }
+.statLabel { position: relative; font-size: 0.78rem; color: var(--color-charcoal-soft); margin-top: 2px; font-weight: 500; }
 
 .mainGrid {
   display: grid;
@@ -65,5 +89,5 @@
   border-bottom: 1.5px solid var(--color-line);
   background: var(--color-sage);
 }
-.tr:hover { background: rgba(13, 79, 60, 0.03); }
+.tr:hover { background: rgba(10, 10, 10, 0.03); }
 .td { padding: 0.75rem 1rem; font-size: 0.88rem; border-bottom: 1px solid var(--color-line); vertical-align: middle; }

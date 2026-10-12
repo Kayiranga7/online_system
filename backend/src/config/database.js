@@ -22,7 +22,13 @@ async function verifyConnection() {
     conn.release();
     console.log('[db] MySQL connection pool established.');
   } catch (err) {
-    console.error('[db] Failed to connect to MySQL:', err.message);
+    console.error('[db] Failed to connect to MySQL:', {
+      message: err.message || '(empty error message)',
+      code: err.code,
+      errno: err.errno,
+      sqlState: err.sqlState,
+    });
+
     throw err;
   }
 }

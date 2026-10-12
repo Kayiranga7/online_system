@@ -2,7 +2,9 @@ const multer = require('multer');
 
 // 3D/AR model formats accepted alongside images, for the AR preview feature
 // (plant_images.ar_model_url / design_images.ar_model_url).
-const subdirs = ['plants', 'designs', 'work-reports', 'avatars', 'models', 'kyc-documents'];
+// KYC documents use a separate private route and must never be uploaded through
+// the generic public-media endpoint.
+const subdirs = ['plants', 'designs', 'work-reports', 'avatars', 'models'];
 
 const ALLOWED_MIME = {
   image: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
@@ -31,4 +33,16 @@ const upload = multer({
   },
 });
 
-module.exports = { upload, subdirs };
+const kycDocumentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: (parseInt(process.env.MAX_FILE_SIZE_MB, 10) || 5) * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const accepted = [...ALLOWED_MIME.image, 'application/pdf'];
+    if (!accepted.includes(file.mimetype)) {
+      return cb(new Error('KYC files must be JPEG, PNG, WEBP, GIF, or PDF.'));
+    }
+    cb(null, true);
+  },
+});
+
+module.exports = { upload, kycDocumentUpload, subdirs };

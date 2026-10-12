@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 /* ─── Spinner ─── */
 export function Spinner({ size = 24, color = 'var(--color-forest)' }) {
@@ -40,11 +41,7 @@ export function FullPageSpinner() {
       gap: 'var(--space-4)',
     }}>
       <Spinner size={40} />
-      <span style={{
-        fontSize: '0.85rem',
-        color: 'var(--color-charcoal-soft)',
-        fontWeight: 500,
-      }}>Loading...</span>
+      <LoadingText />
     </div>
   );
 }
@@ -137,14 +134,17 @@ export function ToastProvider() {
       maxWidth: 380,
     }}>
       <div style={{
-        background: 'var(--color-charcoal)',
-        color: 'white',
+        background: 'var(--menu-bg)',
+        WebkitBackdropFilter: 'var(--menu-blur)',
+        backdropFilter: 'var(--menu-blur)',
+        border: '1px solid var(--menu-border)',
+        color: 'var(--color-charcoal)',
         padding: '0.9rem 1.2rem',
         borderRadius: 'var(--radius-md)',
         display: 'flex',
         alignItems: 'center',
         gap: '0.75rem',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+        boxShadow: 'var(--menu-shadow)',
         fontSize: '0.9rem',
         borderLeft: `4px solid ${colors[t.type] || colors.success}`,
       }}>
@@ -168,14 +168,14 @@ export function ToastProvider() {
           style={{
             background: 'none',
             border: 'none',
-            color: 'rgba(255,255,255,0.5)',
+            color: 'var(--color-charcoal-soft)',
             cursor: 'pointer',
             padding: '4px',
             display: 'flex',
             transition: 'color 0.2s',
           }}
-          onMouseEnter={(e) => e.target.style.color = 'white'}
-          onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.5)'}
+          onMouseEnter={(e) => e.target.style.color = 'var(--color-charcoal)'}
+          onMouseLeave={(e) => e.target.style.color = 'var(--color-charcoal-soft)'}
         >
           <X size={16} />
         </button>
@@ -191,27 +191,35 @@ const STATUS_STYLES = {
   processing: 'badge-amber', assigned: 'badge-amber', pending: 'badge-amber', pending_payment: 'badge-amber',
   pending_approval: 'badge-amber', open: 'badge-amber', in_review: 'badge-amber',
   cancelled: 'badge-red', suspended: 'badge-red', rejected: 'badge-red', failed: 'badge-red',
+  low: 'badge-neutral', medium: 'badge-amber', high: 'badge-red', urgent: 'badge-red',
 };
 
 export function StatusBadge({ status }) {
+  const { t } = useLanguage();
+  const key = `status.${status}`;
+  const translated = t(key);
+  // Unmapped statuses fall back to the raw status, humanized.
+  const label = translated !== key ? translated : status?.replace(/_/g, ' ');
   return (
     <span
       className={`badge ${STATUS_STYLES[status] || 'badge-neutral'}`}
       style={{ transition: 'all 0.2s ease' }}
     >
-      {status?.replace(/_/g, ' ')}
+      {label}
     </span>
   );
 }
 
 /* ─── ConfirmModal ─── */
 export function ConfirmModal({ message, onConfirm, onCancel, dangerous = false }) {
+  const { t } = useLanguage();
   return (
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      backdropFilter: 'blur(4px)',
+      background: 'var(--scrim)',
+      WebkitBackdropFilter: 'blur(6px)',
+      backdropFilter: 'blur(6px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -224,7 +232,11 @@ export function ConfirmModal({ message, onConfirm, onCancel, dangerous = false }
           padding: 'var(--space-6)',
           maxWidth: 420,
           width: '90%',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+          background: 'var(--menu-bg)',
+          WebkitBackdropFilter: 'var(--menu-blur)',
+          backdropFilter: 'var(--menu-blur)',
+          border: '1px solid var(--menu-border)',
+          boxShadow: 'var(--menu-shadow)',
         }}
       >
         <div style={{ display: 'flex', gap: '1rem', marginBottom: 'var(--space-5)' }}>
@@ -243,12 +255,12 @@ export function ConfirmModal({ message, onConfirm, onCancel, dangerous = false }
           <p style={{ fontSize: '0.95rem', color: 'var(--color-charcoal)', lineHeight: 1.5 }}>{message}</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
-          <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-ghost" onClick={onCancel}>{t('ui.cancel')}</button>
           <button
             className={`btn ${dangerous ? 'btn-primary' : 'btn-secondary'}`}
             style={dangerous ? { background: 'var(--color-danger)', boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)' } : {}}
             onClick={onConfirm}
-          >Confirm</button>
+          >{t('ui.confirm')}</button>
         </div>
       </div>
     </div>
@@ -257,16 +269,29 @@ export function ConfirmModal({ message, onConfirm, onCancel, dangerous = false }
 
 /* ─── Pagination ─── */
 export function Pagination({ page, total, limit, onChange }) {
+  const { t } = useLanguage();
   const totalPages = Math.ceil(total / limit);
   if (totalPages <= 1) return null;
   return (
     <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'center', padding: 'var(--space-5) 0' }}>
-      <button className="btn btn-outline" disabled={page <= 1} onClick={() => onChange(page - 1)}>← Prev</button>
+      <button className="btn btn-outline" disabled={page <= 1} onClick={() => onChange(page - 1)}>← {t('pagination.prev')}</button>
       <span style={{ padding: '0.65rem 1rem', fontSize: '0.88rem', color: 'var(--color-charcoal-soft)' }}>
         {page} / {totalPages}
       </span>
-      <button className="btn btn-outline" disabled={page >= totalPages} onClick={() => onChange(page + 1)}>Next →</button>
+      <button className="btn btn-outline" disabled={page >= totalPages} onClick={() => onChange(page + 1)}>{t('pagination.next')} →</button>
     </div>
+  );
+}
+
+/* ─── LoadingText (uses translation context) ─── */
+function LoadingText() {
+  const { t } = useLanguage();
+  return (
+    <span style={{
+      fontSize: '0.85rem',
+      color: 'var(--color-charcoal-soft)',
+      fontWeight: 500,
+    }}>{t('ui.loading')}</span>
   );
 }
 

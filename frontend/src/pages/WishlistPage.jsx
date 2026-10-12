@@ -2,23 +2,25 @@ import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import api from '../services/api';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 import { PlantCard, DesignCard } from '../components/CatalogCard';
 import { FullPageSpinner, toast } from '../components/UI';
 import styles from './Catalog.module.css';
 
 export default function WishlistPage() {
   const { addItem } = useCart();
+  const { t } = useLanguage();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = () => {
     setLoading(true);
-    api.get('/wishlist').then((r) => setItems(r.data.items || [])).catch(() => toast('Failed to load wishlist.', 'error')).finally(() => setLoading(false));
+    api.get('/wishlist').then((r) => setItems(r.data.items || [])).catch(() => toast(t('wishlist.loadFailed'), 'error')).finally(() => setLoading(false));
   };
   useEffect(() => { load(); }, []);
 
   const handleAdd = async (itemType, itemId) => {
-    try { await addItem(itemType, itemId, 1); toast('Added to cart!', 'success'); } catch { toast('Could not add to cart.', 'error'); }
+    try { await addItem(itemType, itemId, 1); toast(t('wishlist.toastAdded'), 'success'); } catch { toast(t('wishlist.toastAddFailed'), 'error'); }
   };
 
   if (loading) return <FullPageSpinner />;
@@ -26,9 +28,9 @@ export default function WishlistPage() {
   return (
     <div className={styles.page}>
       <div className="container">
-        <h1 className={styles.catalogTitle} style={{ marginBottom: 'var(--space-5)' }}>Your wishlist</h1>
+        <h1 className={styles.catalogTitle} style={{ marginBottom: 'var(--space-5)' }}>{t('wishlist.title')}</h1>
         {items.length === 0 ? (
-          <div className={styles.empty}><Heart size={40} color="var(--color-line)" /><p>Your wishlist is empty. Browse the catalogue and tap the heart icon to save items.</p></div>
+          <div className={styles.empty}><Heart size={40} color="var(--color-line)" /><p>{t('wishlist.empty')}</p></div>
         ) : (
           <div className={styles.grid}>
             {items.map((w) => w.item && (

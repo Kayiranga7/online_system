@@ -1,5 +1,6 @@
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 import styles from './CatalogCard.module.css';
 
 function Stars({ rating }) {
@@ -11,14 +12,15 @@ function Stars({ rating }) {
   );
 }
 
-export function PlantCard({ plant, onAddToCart, onWishlist, wishlistedIds = new Set() }) {
+export function PlantCard({ plant, onAddToCart, onWishlist, wishlistedIds = new Set(), index = 0 }) {
+  const { t } = useLanguage();
   const img = plant.primary_image || '/api/placeholder/300/220';
   return (
-    <div className={styles.card}>
+    <div className={`${styles.card} card-in`} style={{ '--stagger-i': index }}>
       <Link to={`/plants/${plant.id}`} className={styles.imgWrap}>
         <img src={img} alt={plant.name} className={styles.img} loading="lazy" />
         <span className={`${styles.tag} ${styles['tag-' + plant.care_difficulty]}`}>
-          {plant.care_difficulty}
+          {t(`catalog.diff.${plant.care_difficulty}`)}
         </span>
       </Link>
       <div className={styles.body}>
@@ -28,8 +30,8 @@ export function PlantCard({ plant, onAddToCart, onWishlist, wishlistedIds = new 
         </div>
         <Link to={`/plants/${plant.id}`} className={styles.name}>{plant.name}</Link>
         <div className={styles.attrs}>
-          <span className={styles.attr}>{plant.sunlight_needs?.replace('_', ' ')}</span>
-          <span className={styles.attr}>{plant.water_needs} water</span>
+          <span className={styles.attr}>{t(`catalog.sun.${plant.sunlight_needs}`)}</span>
+          <span className={styles.attr}>{t('catalog.waterText', { water: t(`catalog.water.${plant.water_needs}`).toLowerCase() })}</span>
         </div>
         <div className={styles.footer}>
           <span className={styles.price}>RWF {Number(plant.price).toLocaleString()}</span>
@@ -45,7 +47,7 @@ export function PlantCard({ plant, onAddToCart, onWishlist, wishlistedIds = new 
             )}
             {onAddToCart && (
               <button className={styles.addBtn} onClick={() => onAddToCart(plant.id)}>
-                <ShoppingCart size={14} /> Add
+                <ShoppingCart size={14} /> {t('catalog.add')}
               </button>
             )}
           </div>
@@ -55,17 +57,18 @@ export function PlantCard({ plant, onAddToCart, onWishlist, wishlistedIds = new 
   );
 }
 
-export function DesignCard({ design, onAddToCart }) {
+export function DesignCard({ design, onAddToCart, index = 0 }) {
+  const { t } = useLanguage();
   const img = design.primary_image || '/api/placeholder/300/220';
   return (
-    <div className={styles.card}>
+    <div className={`${styles.card} card-in`} style={{ '--stagger-i': index }}>
       <Link to={`/designs/${design.id}`} className={styles.imgWrap}>
         <img src={img} alt={design.name} className={styles.img} loading="lazy" />
-        <span className={`${styles.tag} ${styles.tagStyle}`}>{design.style?.replace('_', ' ')}</span>
+        <span className={`${styles.tag} ${styles.tagStyle}`}>{t(`catalog.style.${design.style}`)}</span>
       </Link>
       <div className={styles.body}>
         <div className={styles.meta}>
-          <span className={styles.sci}>Min {design.min_area_sqm}m² · {design.estimated_install_days}d install</span>
+          <span className={styles.sci}>{t('catalog.minArea', { area: design.min_area_sqm })} · {t('catalog.installDays', { days: design.estimated_install_days })}</span>
           <Stars rating={design.average_rating} />
         </div>
         <Link to={`/designs/${design.id}`} className={styles.name}>{design.name}</Link>
@@ -73,7 +76,7 @@ export function DesignCard({ design, onAddToCart }) {
           <span className={styles.price}>RWF {Number(design.price).toLocaleString()}</span>
           {onAddToCart && (
             <button className={styles.addBtn} onClick={() => onAddToCart(design.id)}>
-              <ShoppingCart size={14} /> Add
+              <ShoppingCart size={14} /> {t('catalog.add')}
             </button>
           )}
         </div>

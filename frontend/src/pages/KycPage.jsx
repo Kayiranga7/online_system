@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Upload, CheckCircle, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { ShieldCheck, Upload, CheckCircle, XCircle, AlertTriangle, Loader2, Eye } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/UI';
+import { openKycDocument } from '../utils/kycDocuments';
 
 const DOC_TYPES = [
   { value: 'national_id', label: 'National ID' },
@@ -74,7 +75,7 @@ export default function KycPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-        <Loader2 size={24} style={{ animation: 'spin 0.8s linear infinite', color: 'var(--color-terracotta)' }} />
+        <Loader2 size={24} style={{ animation: 'spin 0.8s linear infinite', color: 'var(--accent-strong)' }} />
       </div>
     );
   }
@@ -82,7 +83,7 @@ export default function KycPage() {
   if (user?.institutionType !== 'business') {
     return (
       <div className="container" style={{ padding: '3rem 1rem', textAlign: 'center' }}>
-        <ShieldCheck size={48} style={{ color: 'var(--color-terracotta)', marginBottom: '1rem' }} />
+        <ShieldCheck size={48} style={{ color: 'var(--accent-strong)', marginBottom: '1rem' }} />
         <h2>KYC Verification</h2>
         <p style={{ color: 'var(--color-charcoal-soft)' }}>KYC verification is only required for business accounts. Your account is set up as a personal garden account.</p>
       </div>
@@ -96,7 +97,7 @@ export default function KycPage() {
   return (
     <div className="container" style={{ padding: '2rem 1rem', maxWidth: 720, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-        <ShieldCheck size={28} color="var(--color-terracotta)" />
+        <ShieldCheck size={28} color="var(--accent-strong)" />
         <h1 style={{ margin: 0 }}>KYC Verification</h1>
       </div>
 
@@ -156,7 +157,7 @@ export default function KycPage() {
           <h3 style={{ marginBottom: '1rem' }}>Submitted Documents</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {documents.map((doc) => {
-              const docStatusColors = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444' };
+              const docStatusColors = { pending: 'var(--color-warning)', approved: 'var(--color-success)', rejected: 'var(--color-danger)' };
               const DocStatusIcon = STATUS_ICONS[doc.status] || AlertTriangle;
               return (
                 <div key={doc.id} style={{
@@ -179,6 +180,9 @@ export default function KycPage() {
                       </div>
                     )}
                   </div>
+                  <button type="button" className="btn btn-outline" onClick={() => openKycDocument(doc.id).catch(() => toast('Could not open this document.', 'error'))}>
+                    <Eye size={14} /> View
+                  </button>
                   <span style={{
                     fontSize: '0.75rem', fontWeight: 600, textTransform: 'capitalize',
                     padding: '0.15rem 0.5rem', borderRadius: 'var(--radius)',

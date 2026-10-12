@@ -4,7 +4,6 @@ import api from '../services/api';
 import { FullPageSpinner, toast } from '../components/UI';
 import MediaManager from '../components/MediaManager';
 import styles from './Tasks.module.css';
-import detailStyles from './Detail.module.css';
 
 const SUNLIGHT = ['full_sun', 'partial_shade', 'full_shade'];
 const WATER = ['low', 'medium', 'high'];

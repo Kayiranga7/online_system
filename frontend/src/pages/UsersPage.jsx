@@ -55,8 +55,8 @@ export default function UsersPage() {
           <h1 className={styles.heading}>Users</h1>
           <div className={styles.headerActions}>
             <div style={{ position: 'relative' }}>
-              <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-charcoal-soft)' }} />
-              <input className="input" placeholder="Search…" style={{ paddingLeft: '2rem', width: 180 }} value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input className="input" placeholder="Search…" style={{ paddingRight: '2rem', width: 180 }} value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Search size={15} aria-hidden="true" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-charcoal-soft)', pointerEvents: 'none' }} />
             </div>
             <select className="input" style={{ width: 'auto' }} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
               <option value="">All roles</option>

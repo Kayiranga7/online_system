@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Leaf } from 'lucide-react';
 import api from '../services/api';
 import { toast } from '../components/UI';
+import { heroBackground } from '../utils/heroBackground';
 import styles from './Auth.module.css';
 
 export function VerifyEmailPage() {
@@ -89,9 +90,9 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} style={heroBackground}>
       <div className={styles.panel}>
-        <div className={styles.logoRow}><Leaf size={28} color="var(--color-terracotta)" /><span className={styles.logoText}>IMIZI</span></div>
+        <div className={styles.logoRow}><Leaf size={28} color="var(--accent-strong)" /><span className={styles.logoText}>IMIZI</span></div>
         <h1 className={styles.heading}>Reset your password</h1>
         {sent ? (
           <p className={styles.sub}>If that email is registered, a reset link has been sent. Check your inbox.</p>
@@ -129,9 +130,9 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} style={heroBackground}>
       <div className={styles.panel}>
-        <div className={styles.logoRow}><Leaf size={28} color="var(--color-terracotta)" /><span className={styles.logoText}>IMIZI</span></div>
+        <div className={styles.logoRow}><Leaf size={28} color="var(--accent-strong)" /><span className={styles.logoText}>IMIZI</span></div>
         <h1 className={styles.heading}>Set a new password</h1>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>

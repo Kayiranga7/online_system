@@ -3,7 +3,7 @@ const { AppError } = require('../middleware/errorHandler');
 const { recordAudit } = require('../services/auditService');
 const { notify, broadcastToRole } = require('../services/notificationService');
 const { sendEmail } = require('../services/emailService');
-const { saveFile, deleteFile } = require('../services/storageService');
+const { saveFile, deleteFile, readFile } = require('../services/storageService');
 const path = require('path');
 
 // ------------------------------------------------------------------
@@ -28,12 +28,15 @@ async function submitDocument(req, res, next) {
     // Save the file via storage service
     const ext = path.extname(req.file.originalname) || '.jpg';
     const filename = `kyc-${req.user.id}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    const documentUrl = await saveFile({
+    await saveFile({
       category: 'kyc-documents',
       filename,
       buffer: req.file.buffer,
       mimetype: req.file.mimetype,
+      isPrivate: true,
     });
+    // Store the private storage key, never a public URL.
+    const documentUrl = `kyc-documents/${filename}`;
 
     // Insert document record
     const [result] = await pool.query(
@@ -75,6 +78,44 @@ async function submitDocument(req, res, next) {
   }
 }
 
+async function ensureCanManageUser(req, userId) {
+  if (req.user.role === 'admin') return;
+  const [[manager]] = await pool.query('SELECT district_id FROM users WHERE id = ?', [req.user.id]);
+  const [[target]] = await pool.query('SELECT district_id FROM users WHERE id = ?', [userId]);
+  if (!manager || !target || manager.district_id == null || manager.district_id !== target.district_id) {
+    throw new AppError('User not found.', 404);
+  }
+}
+
+async function getDocumentFile(req, res, next) {
+  try {
+    const [[doc]] = await pool.query(
+      'SELECT id, user_id, document_url FROM kyc_documents WHERE id = ?',
+      [req.params.documentId]
+    );
+    if (!doc) throw new AppError('Document not found.', 404);
+    if (req.user.role === 'customer' && doc.user_id !== req.user.id) {
+      throw new AppError('Document not found.', 404);
+    }
+    if (req.user.role === 'manager') await ensureCanManageUser(req, doc.user_id);
+    if (!['customer', 'manager', 'admin'].includes(req.user.role)) {
+      throw new AppError('Document not found.', 404);
+    }
+
+    const { buffer, contentType } = await readFile(doc.document_url);
+    res.set({
+      'Cache-Control': 'private, no-store',
+      'Content-Disposition': `inline; filename="kyc-document-${doc.id}"`,
+      'Content-Type': contentType,
+      'X-Content-Type-Options': 'nosniff',
+    });
+    res.send(buffer);
+  } catch (err) {
+    if (err.code === 'ENOENT' || err.name === 'NoSuchKey') return next(new AppError('Document file not found.', 404));
+    next(err);
+  }
+}
+
 // ------------------------------------------------------------------
 // GET /api/kyc/status — customer checks their own KYC status
 // ------------------------------------------------------------------
@@ -107,6 +148,8 @@ async function getKycStatus(req, res, next) {
 // ------------------------------------------------------------------
 async function listPending(req, res, next) {
   try {
+    const districtClause = req.user.role === 'admin' ? '' : 'AND u.district_id = ?';
+    const params = req.user.role === 'admin' ? [] : [req.user.districtId];
     const [rows] = await pool.query(
       `SELECT u.id AS user_id, u.full_name, u.email, u.institution_type, u.kyc_status,
               u.district_id, d.name AS district_name,
@@ -115,9 +158,10 @@ async function listPending(req, res, next) {
        FROM users u
        JOIN kyc_documents kd ON kd.user_id = u.id
        LEFT JOIN districts d ON d.id = u.district_id
-       WHERE u.kyc_status = 'submitted'
+       WHERE u.kyc_status = 'submitted' ${districtClause}
        GROUP BY u.id
-       ORDER BY submitted_at ASC`
+       ORDER BY submitted_at ASC`,
+      params
     );
     res.json({ submissions: rows });
   } catch (err) {
@@ -130,6 +174,7 @@ async function listPending(req, res, next) {
 // ------------------------------------------------------------------
 async function getUserDocuments(req, res, next) {
   try {
+    await ensureCanManageUser(req, Number(req.params.userId));
     const [[user]] = await pool.query(
       'SELECT id, full_name, email, institution_type, kyc_status, district_id FROM users WHERE id = ?',
       [req.params.userId]
@@ -167,6 +212,7 @@ async function reviewDocument(req, res, next) {
     const [rows] = await pool.query('SELECT * FROM kyc_documents WHERE id = ?', [req.params.documentId]);
     if (!rows.length) throw new AppError('Document not found.', 404);
     const doc = rows[0];
+    await ensureCanManageUser(req, doc.user_id);
 
     // Update the document
     await pool.query(
@@ -234,4 +280,4 @@ async function reviewDocument(req, res, next) {
   }
 }
 
-module.exports = { submitDocument, getKycStatus, listPending, getUserDocuments, reviewDocument };
+module.exports = { submitDocument, getDocumentFile, getKycStatus, listPending, getUserDocuments, reviewDocument };

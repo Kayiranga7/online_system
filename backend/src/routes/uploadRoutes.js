@@ -13,6 +13,16 @@ router.post('/:category', authenticate, authorize('admin', 'manager', 'employee'
   if (!subdirs.includes(req.params.category)) {
     return next(new AppError(`Invalid upload category. Use one of: ${subdirs.join(', ')}`, 400));
   }
+  const permittedRoles = {
+    plants: ['admin'],
+    designs: ['admin'],
+    models: ['admin'],
+    'work-reports': ['employee', 'manager', 'admin'],
+    avatars: ['admin', 'manager', 'employee', 'customer'],
+  }[req.params.category];
+  if (!permittedRoles.includes(req.user.role)) {
+    return next(new AppError('You do not have permission to upload to this category.', 403));
+  }
   upload.single('image')(req, res, async (err) => {
     if (err) return next(new AppError(err.message, 400));
     if (!req.file) return next(new AppError('No file uploaded.', 400));

@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { imagetools } from 'vite-imagetools';
+import { lqip } from './plugins/lqip.js';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), imagetools(), lqip()],
   server: {
     host: true,
     port: 5173,

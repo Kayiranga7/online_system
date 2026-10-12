@@ -9,8 +9,16 @@ async function listDesigns(req, res, next) {
     const params = [];
 
     if (search) {
-      conditions.push('MATCH(d.name, d.description) AGAINST (? IN NATURAL LANGUAGE MODE)');
-      params.push(search);
+      // Per-word substring match, words ANDed together (see listPlants in
+      // plantController for rationale).
+      const words = String(search).trim().split(/\s+/).filter(Boolean);
+      if (words.length) {
+        conditions.push('(' + words.map(() => '(d.name LIKE ? OR d.description LIKE ?)').join(' AND ') + ')');
+        for (const w of words) {
+          const like = `%${w.replace(/[\\%_]/g, '\\$&')}%`;
+          params.push(like, like);
+        }
+      }
     }
     if (categoryId) { conditions.push('d.category_id = ?'); params.push(categoryId); }
     if (style) { conditions.push('d.style = ?'); params.push(style); }

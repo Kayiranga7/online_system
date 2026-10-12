@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Leaf, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../services/api';
 import { toast } from '../components/UI';
+import { heroBackground } from '../utils/heroBackground';
 import styles from './Auth.module.css';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '', twoFactorCode: '' });
   const [requires2FA, setRequires2FA] = useState(false);
@@ -25,10 +28,10 @@ export default function LoginPage() {
     try {
       const result = await login(form.email, form.password, requires2FA ? form.twoFactorCode : undefined);
       if (result.requiresTwoFactor) { setRequires2FA(true); return; }
-      toast('Welcome back!', 'success');
+      toast(t('login.toastWelcome'), 'success');
       navigate('/dashboard');
     } catch (err) {
-      const message = err.response?.data?.error || 'Login failed.';
+      const message = err.response?.data?.error || t('login.toastFailed');
       toast(message, 'error');
       if (message.toLowerCase().includes('verify your email')) setUnverified(true);
     } finally {
@@ -40,47 +43,47 @@ export default function LoginPage() {
     try {
       await api.post('/auth/resend-verification', { email: form.email });
       setResent(true);
-      toast('If that email needs verifying, a new link is on its way.', 'success');
+      toast(t('login.verificationSent'), 'success');
     } catch {
-      toast('Something went wrong. Please try again.', 'error');
+      toast(t('login.toastGenericError'), 'error');
     }
   };
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} style={heroBackground}>
       <div className={styles.panel}>
       
-        <h1 className={styles.heading}>Sign in to your garden</h1>
-        <p className={styles.sub}>Don't have an account? <Link to="/register" className={styles.link}>Create one</Link></p>
+        <h1 className={styles.heading}>{t('login.heading')}</h1>
+        <p className={styles.sub}>{t('login.noAccount')} <Link to="/register" className={styles.link}>{t('login.createOne')}</Link></p>
 
         {/* Demo credentials banner */}
        
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
-            <label className="label">Email address</label>
+            <label className="label">{t('login.email')}</label>
             <input className="input" type="email" value={form.email} onChange={set('email')} required placeholder="you@example.com" />
           </div>
           <div className={styles.field}>
-            <label className="label">Password</label>
+            <label className="label">{t('login.password')}</label>
             <div className={styles.passwordWrap}>
               <input className="input" type={showPass ? 'text' : 'password'} value={form.password} onChange={set('password')} required placeholder="••••••••" />
               <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(s => !s)}>
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <Link to="/forgot-password" className={styles.forgot}>Forgot password?</Link>
+            <Link to="/forgot-password" className={styles.forgot}>{t('login.forgot')}</Link>
           </div>
 
           {unverified && (
             <div className={styles.demoBanner}>
               {resent ? (
-                <span>New verification link sent — check your inbox.</span>
+                <span>{t('login.verificationSent')}</span>
               ) : (
                 <>
-                  <span>Your email isn't verified yet. </span>
+                  <span>{t('login.verificationPending')} </span>
                   <button type="button" className={styles.link} style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={handleResend}>
-                    Resend verification email
+                    {t('login.resendVerification')}
                   </button>
                 </>
               )}
@@ -89,13 +92,13 @@ export default function LoginPage() {
 
           {requires2FA && (
             <div className={styles.field}>
-              <label className="label">Two-factor authentication code</label>
+              <label className="label">{t('login.twoFactor')}</label>
               <input className="input" type="text" inputMode="numeric" maxLength={6} value={form.twoFactorCode} onChange={set('twoFactorCode')} placeholder="6-digit code" />
             </div>
           )}
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? t('login.submitting') : t('login.submit')}
           </button>
         </form>
       </div>
@@ -103,8 +106,8 @@ export default function LoginPage() {
       {/* Decorative panel */}
       <div className={styles.deco}>
         <div className={styles.decoInner}>
-          <h2>Rwanda's garden design & plant studio</h2>
-          <p>Order plants, book landscape designs, and track installations.</p>
+          <h2>{t('login.decoTitle')}</h2>
+          <p>{t('login.decoBody')}</p>
         </div>
       </div>
     </div>

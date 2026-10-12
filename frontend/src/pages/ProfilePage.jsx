@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { ShieldCheck, Mail, Phone, MapPin, KeyRound, Pencil } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { toast } from '../components/UI';
 import styles from './Profile.module.css';
 
 export default function ProfilePage() {
   const { user, storeToken, setUser } = useAuth();
+  const { t } = useLanguage();
   const [qr, setQr] = useState(null);
   const [code, setCode] = useState('');
   const [backupCodes, setBackupCodes] = useState(null);
@@ -26,10 +28,10 @@ export default function ProfilePage() {
     try {
       const r = await api.patch('/auth/me', profileForm);
       setUser(r.data.user);
-      toast('Profile updated.', 'success');
+      toast(t('profile.toastUpdated'), 'success');
       setEditing(false);
     } catch (err) {
-      toast(err.response?.data?.error || 'Could not update profile.', 'error');
+      toast(err.response?.data?.error || t('profile.toastUpdateFailed'), 'error');
     } finally {
       setProfileLoading(false);
     }
@@ -43,17 +45,17 @@ export default function ProfilePage() {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast('New passwords do not match.', 'error');
+      toast(t('profile.toastPwMismatch'), 'error');
       return;
     }
     setPwLoading(true);
     try {
       const r = await api.patch('/auth/update-password', { currentPassword, newPassword });
       storeToken(r.data.accessToken);
-      toast('Password updated successfully.', 'success');
+      toast(t('profile.toastPwUpdated'), 'success');
       setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
     } catch (err) {
-      toast(err.response?.data?.error || 'Could not update password.', 'error');
+      toast(err.response?.data?.error || t('profile.toastPwFailed'), 'error');
     } finally {
       setPwLoading(false);
     }
@@ -61,21 +63,21 @@ export default function ProfilePage() {
 
   const startSetup = async () => {
     try { const r = await api.post('/auth/2fa/setup'); setQr(r.data.qrCode); }
-    catch { toast('Could not start 2FA setup.', 'error'); }
+    catch { toast(t('profile.toast2faStartFailed'), 'error'); }
   };
 
   const enable2FA = async () => {
     try {
       const r = await api.post('/auth/2fa/enable', { code });
       setBackupCodes(r.data.backupCodes);
-      toast('Two-factor authentication enabled!', 'success');
+      toast(t('profile.toast2faEnabled'), 'success');
       setQr(null);
-    } catch (err) { toast(err.response?.data?.error || 'Invalid code.', 'error'); }
+    } catch (err) { toast(err.response?.data?.error || t('profile.toast2faCode'), 'error'); }
   };
 
   const disable2FA = async () => {
-    try { await api.post('/auth/2fa/disable'); toast('2FA disabled.', 'success'); }
-    catch { toast('Could not disable 2FA.', 'error'); }
+    try { await api.post('/auth/2fa/disable'); toast(t('profile.toast2faDisabled'), 'success'); }
+    catch { toast(t('profile.toast2faDisableFailed'), 'error'); }
   };
 
   if (!user) return null;
@@ -83,7 +85,7 @@ export default function ProfilePage() {
   return (
     <div className={styles.page}>
       <div className="container" style={{ maxWidth: 640 }}>
-        <h1 className={styles.heading}>Your profile</h1>
+        <h1 className={styles.heading}>{t('profile.heading')}</h1>
 
         <div className={`card ${styles.section}`}>
           <div className={styles.avatarRow}>
@@ -94,7 +96,7 @@ export default function ProfilePage() {
             </div>
             {!editing && (
               <button className="btn btn-outline" style={{ fontSize: '0.82rem', padding: '0.4rem 0.7rem' }} onClick={startEditing}>
-                <Pencil size={14} /> Edit
+                <Pencil size={14} /> {t('profile.edit')}
               </button>
             )}
           </div>
@@ -102,79 +104,79 @@ export default function ProfilePage() {
           {editing ? (
             <form onSubmit={handleSaveProfile} className={styles.form}>
               <div className={styles.field}>
-                <label className="label">Full name</label>
+                <label className="label">{t('profile.fullName')}</label>
                 <input
                   className="input" required minLength={2}
                   value={profileForm.fullName} onChange={(e) => setProfileForm((f) => ({ ...f, fullName: e.target.value }))}
                 />
               </div>
               <div className={styles.field}>
-                <label className="label">Phone number</label>
+                <label className="label">{t('profile.phoneNumber')}</label>
                 <input
                   className="input"
                   value={profileForm.phoneNumber} onChange={(e) => setProfileForm((f) => ({ ...f, phoneNumber: e.target.value }))}
                 />
               </div>
               <div className={styles.infoRow} style={{ color: 'var(--color-charcoal-soft)', fontSize: '0.85rem' }}>
-                <Mail size={15} /> {user.email} <span style={{ fontSize: '0.78rem' }}>(email can't be changed here)</span>
+                <Mail size={15} /> {user.email} <span style={{ fontSize: '0.78rem' }}>{t('profile.emailNote')}</span>
               </div>
               <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={profileLoading}>{profileLoading ? 'Saving…' : 'Save changes'}</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>{t('ui.cancel')}</button>
+                <button type="submit" className="btn btn-primary" disabled={profileLoading}>{profileLoading ? t('profile.saving') : t('profile.saveChanges')}</button>
               </div>
             </form>
           ) : (
             <div className={styles.infoList}>
               <div className={styles.infoRow}><Mail size={15} /> {user.email}</div>
               {user.phoneNumber && <div className={styles.infoRow}><Phone size={15} /> {user.phoneNumber}</div>}
-              {user.institutionType && <div className={styles.infoRow}><MapPin size={15} /> {user.institutionType} account</div>}
+              {user.institutionType && <div className={styles.infoRow}><MapPin size={15} /> {t('profile.accountType', { type: user.institutionType })}</div>}
             </div>
           )}
         </div>
 
         <div className={`card ${styles.section}`}>
-          <h3 className={styles.sectionTitle}><KeyRound size={17} /> Change password</h3>
+          <h3 className={styles.sectionTitle}><KeyRound size={17} /> {t('profile.changePassword')}</h3>
           <form onSubmit={handleChangePassword} className={styles.form}>
             <div className={styles.field}>
-              <label className="label">Current password</label>
+              <label className="label">{t('profile.currentPassword')}</label>
               <input
                 className="input" type="password" required
                 value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
               />
             </div>
             <div className={styles.field}>
-              <label className="label">New password</label>
+              <label className="label">{t('profile.newPassword')}</label>
               <input
                 className="input" type="password" minLength={8} required
                 value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
             <div className={styles.field}>
-              <label className="label">Confirm new password</label>
+              <label className="label">{t('profile.confirmNewPassword')}</label>
               <input
                 className="input" type="password" minLength={8} required
                 value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
             <button type="submit" className="btn btn-primary" disabled={pwLoading}>
-              {pwLoading ? 'Updating…' : 'Update password'}
+              {pwLoading ? t('profile.updating') : t('profile.updatePassword')}
             </button>
           </form>
         </div>
 
         <div className={`card ${styles.section}`}>
-          <h3 className={styles.sectionTitle}><ShieldCheck size={17} /> Two-factor authentication</h3>
+          <h3 className={styles.sectionTitle}><ShieldCheck size={17} /> {t('profile.twoFactor')}</h3>
           {user.twoFactorEnabled ? (
             <>
               <p style={{ fontSize: '0.88rem', color: 'var(--color-charcoal-soft)', marginBottom: 'var(--space-3)' }}>
-                2FA is currently <strong style={{ color: 'var(--color-success)' }}>enabled</strong> on your account.
+                {t('profile.twoFactorOn')}
               </p>
-              <button className="btn btn-outline" onClick={disable2FA}>Disable 2FA</button>
+              <button className="btn btn-outline" onClick={disable2FA}>{t('profile.disable2FA')}</button>
             </>
           ) : qr ? (
             <div>
-              <p style={{ fontSize: '0.88rem', marginBottom: 'var(--space-3)' }}>Scan this QR code with your authenticator app, then enter the 6-digit code:</p>
-              <img src={qr} alt="2FA QR code" style={{ width: 160, height: 160, marginBottom: 'var(--space-3)' }} />
+              <p style={{ fontSize: '0.88rem', marginBottom: 'var(--space-3)' }}>{t('profile.twoFactorScan')}</p>
+              <img src={qr} alt={t('profile.twoFactor')} style={{ width: 160, height: 160, marginBottom: 'var(--space-3)' }} />
               <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
                 <input className="input" placeholder="123456" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} style={{ width: 140 }} />
                 <button className="btn btn-primary" onClick={enable2FA}>Verify & enable</button>
@@ -182,7 +184,7 @@ export default function ProfilePage() {
             </div>
           ) : backupCodes ? (
             <div>
-              <p style={{ fontWeight: 600, marginBottom: 8 }}>Save these backup codes somewhere safe:</p>
+              <p style={{ fontWeight: 600, marginBottom: 8 }}>{t('profile.backupCodes')}</p>
               <div className={styles.backupGrid}>
                 {backupCodes.map((c) => <code key={c} className={styles.backupCode}>{c}</code>)}
               </div>
@@ -190,9 +192,9 @@ export default function ProfilePage() {
           ) : (
             <>
               <p style={{ fontSize: '0.88rem', color: 'var(--color-charcoal-soft)', marginBottom: 'var(--space-3)' }}>
-                Add an extra layer of security to your account.
+                {t('profile.twoFactorDesc')}
               </p>
-              <button className="btn btn-primary" onClick={startSetup}>Enable 2FA</button>
+              <button className="btn btn-primary" onClick={startSetup}>{t('profile.enable2FA')}</button>
             </>
           )}
         </div>

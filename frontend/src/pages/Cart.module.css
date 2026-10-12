@@ -24,6 +24,41 @@
 .summaryRow { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--color-charcoal-soft); }
 .summaryTotal { font-size: 1.05rem; font-weight: 700; color: var(--color-charcoal); padding-top: var(--space-4); border-top: 2px solid var(--color-forest); }
 
-.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4); min-height: 60vh; text-align: center; }
+/* Empty cart: aurora panel + gradient icon badge, matching orders empty state */
+.empty {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  min-height: 60vh;
+  text-align: center;
+  background: var(--color-cream);
+  border: 1px dashed var(--color-line-strong);
+  border-radius: var(--radius-lg);
+  margin: var(--space-5) auto 0;
+  max-width: 640px;
+}
+.empty::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--aurora-card);
+  pointer-events: none;
+}
+.empty > * { position: relative; }
+.emptyIcon {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tile-green-bg);
+  color: #D1FAE5;
+  box-shadow: var(--shadow-glow);
+}
 .empty h2 { font-size: 1.5rem; }
-.empty p { color: var(--color-charcoal-soft); }
+.empty p { color: var(--color-charcoal-soft); max-width: 380px; }

@@ -23,7 +23,18 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use('/api', apiLimiter);
-app.use('/uploads', express.static('uploads'));
+// KYC files are served only through the authenticated KYC download endpoint.
+app.use('/uploads', (req, res, next) => {
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(req.path).replace(/\\/g, '/');
+  } catch {
+    return res.sendStatus(400);
+  }
+  if (/^\/?kyc-documents(?:\/|$)/i.test(decodedPath)) return res.sendStatus(404);
+  next();
+});
+app.use('/uploads', express.static(process.env.UPLOAD_DIR || 'uploads'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

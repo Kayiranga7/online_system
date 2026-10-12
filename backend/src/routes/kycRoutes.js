@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const { upload } = require('../config/upload');
+const { kycDocumentUpload } = require('../config/upload');
 const kycController = require('../controllers/kycController');
 const { authenticate, authorize } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
@@ -11,7 +11,7 @@ router.post(
   '/documents',
   authenticate,
   authorize('customer'),
-  upload.single('document'),
+  kycDocumentUpload.single('document'),
   [body('documentType').isIn(['national_id', 'business_license', 'tax_certificate', 'utility_bill', 'other']).withMessage('Invalid document type.')],
   handleValidation,
   kycController.submitDocument
@@ -19,6 +19,9 @@ router.post(
 
 // Customer checks their own KYC status
 router.get('/status', authenticate, kycController.getKycStatus);
+
+// Document bytes are returned only after checking the requesting user's access.
+router.get('/documents/:documentId/file', authenticate, authorize('customer', 'manager', 'admin'), kycController.getDocumentFile);
 
 // Admin/Manager lists pending KYC submissions
 router.get('/pending', authenticate, authorize('admin', 'manager'), kycController.listPending);

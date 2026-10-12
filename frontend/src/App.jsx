@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotifProvider } from './context/NotifContext';
 import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider, AuthenticatedLanguageSync } from './context/LanguageContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ToastProvider } from './components/UI';
@@ -57,6 +58,8 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         <AuthProvider>
+          <LanguageProvider>
+          <AuthenticatedLanguageSync />
           <NotifProvider>
             <CartProvider>
               <ToastProvider />
@@ -112,6 +115,7 @@ export default function App() {
             </Routes>
             </CartProvider>
           </NotifProvider>
+          </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>

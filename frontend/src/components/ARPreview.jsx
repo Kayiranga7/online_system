@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, Smartphone, X } from 'lucide-react';
 import styles from './ARPreview.module.css';
 

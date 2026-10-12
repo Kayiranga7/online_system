@@ -20,8 +20,12 @@ async function payWithMomo(req, res, next) {
     if (order.status !== 'pending_payment') throw new AppError('Order already paid or not payable.', 400);
 
     if (!process.env.MTN_MOMO_SUBSCRIPTION_KEY || process.env.MTN_MOMO_SUBSCRIPTION_KEY === 'mock_key') {
-      // No sandbox credentials provisioned yet (see scripts/provision-momo.js) -
-      // fall back to a clearly-labeled simulation so local dev keeps working.
+      // Never turn missing production payment credentials into a successful charge.
+      const simulationEnvironment = ['development', 'test'].includes(process.env.NODE_ENV);
+      if (!simulationEnvironment || process.env.PAYMENTS_SIMULATION_ENABLED !== 'true') {
+        throw new AppError('MTN MoMo is not configured.', 503);
+      }
+      // Local simulations must be explicitly enabled in a non-production environment.
       const mockId = `SIMULATED-MOMO-${Date.now()}`;
       await pool.query(
         `INSERT INTO payments (order_id, provider, provider_payment_id, amount, currency, status, raw_response)

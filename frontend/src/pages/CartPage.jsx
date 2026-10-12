@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 import { toast, ConfirmModal } from '../components/UI';
 import styles from './Cart.module.css';
 
 export default function CartPage() {
   const { items, subtotal, updateItem, removeItem } = useCart();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [confirmRemove, setConfirmRemove] = useState(null);
 
@@ -18,10 +20,10 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className={styles.empty}>
-        <ShoppingBag size={52} color="var(--color-line)" />
-        <h2>Your cart is empty</h2>
-        <p>Browse our plant catalogue and garden designs to get started.</p>
-        <Link to="/plants" className="btn btn-primary">Browse plants</Link>
+        <div className={styles.emptyIcon}><ShoppingBag size={30} /></div>
+        <h2>{t('cart.emptyTitle')}</h2>
+        <p>{t('cart.emptyBody')}</p>
+        <Link to="/plants" className="btn btn-primary">{t('landing.browsePlants')}</Link>
       </div>
     );
   }
@@ -29,7 +31,7 @@ export default function CartPage() {
   return (
     <div className={styles.page}>
       <div className="container">
-        <h1 className={styles.heading}>Your cart</h1>
+        <h1 className={styles.heading}>{t('cart.title')}</h1>
         <div className={styles.layout}>
           {/* Items */}
           <div className={styles.items}>
@@ -38,7 +40,7 @@ export default function CartPage() {
                 <div className={styles.itemInfo}>
                   <span className={`badge badge-neutral`} style={{ textTransform: 'capitalize' }}>{item.itemType}</span>
                   <p className={styles.itemName}>{item.name}</p>
-                  <p className={styles.itemPrice}>RWF {Number(item.unitPrice).toLocaleString()} each</p>
+                  <p className={styles.itemPrice}>RWF {Number(item.unitPrice).toLocaleString()} {t('cart.each')}</p>
                 </div>
                 <div className={styles.itemControls}>
                   <div className={styles.qtyRow}>
@@ -57,18 +59,18 @@ export default function CartPage() {
 
           {/* Summary */}
           <div className={`card ${styles.summary}`}>
-            <h2 className={styles.summaryTitle}>Order summary</h2>
-            <div className={styles.summaryRow}><span>Subtotal</span><span>RWF {subtotal.toLocaleString()}</span></div>
-            <div className={styles.summaryRow}><span>VAT (18%)</span><span>RWF {tax.toLocaleString()}</span></div>
-            <div className={styles.summaryRow}><span>Delivery fee</span><span>RWF {DELIVERY_FEE.toLocaleString()}</span></div>
+            <h2 className={styles.summaryTitle}>{t('cart.summary')}</h2>
+            <div className={styles.summaryRow}><span>{t('cart.subtotal')}</span><span>RWF {subtotal.toLocaleString()}</span></div>
+            <div className={styles.summaryRow}><span>{t('cart.vat')}</span><span>RWF {tax.toLocaleString()}</span></div>
+            <div className={styles.summaryRow}><span>{t('cart.delivery')}</span><span>RWF {DELIVERY_FEE.toLocaleString()}</span></div>
             <div className={`${styles.summaryRow} ${styles.summaryTotal}`}>
-              <span>Total</span><span>RWF {total.toLocaleString()}</span>
+              <span>{t('dash.total')}</span><span>RWF {total.toLocaleString()}</span>
             </div>
             <button className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-4)' }} onClick={() => navigate('/checkout')}>
-              Checkout <ArrowRight size={16} />
+              {t('cart.checkout')} <ArrowRight size={16} />
             </button>
             <Link to="/plants" className="btn btn-ghost" style={{ width: '100%', marginTop: 'var(--space-2)' }}>
-              Continue shopping
+              {t('cart.continueShopping')}
             </Link>
           </div>
         </div>
@@ -76,9 +78,9 @@ export default function CartPage() {
 
       {confirmRemove && (
         <ConfirmModal
-          message="Remove this item from your cart?"
+          message={t('cart.removeConfirm')}
           dangerous
-          onConfirm={async () => { await removeItem(confirmRemove); setConfirmRemove(null); toast('Item removed.'); }}
+          onConfirm={async () => { await removeItem(confirmRemove); setConfirmRemove(null); toast(t('cart.removed')); }}
           onCancel={() => setConfirmRemove(null)}
         />
       )}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
+import { useLanguage } from '../context/LanguageContext';
 import { toast } from './UI';
 import styles from '../pages/Checkout.module.css';
 
@@ -9,7 +10,7 @@ const CARD_ELEMENT_OPTIONS = {
       fontSize: '15px',
       fontFamily: '"Inter", sans-serif',
       color: 'var(--color-charcoal)',
-      '::placeholder': { color: '#9a9788' },
+      '::placeholder': { color: '#9DB4A5' },
     },
     invalid: { color: 'var(--color-danger)' },
   },
@@ -31,6 +32,7 @@ const CARD_ELEMENT_OPTIONS = {
 export default function StripePaymentForm({ clientSecret, onSuccess, onError, amount }) {
   const stripe = useStripe();
   const elements = useElements();
+  const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   const [cardError, setCardError] = useState(null);
 
@@ -65,18 +67,17 @@ export default function StripePaymentForm({ clientSecret, onSuccess, onError, am
   return (
     <form onSubmit={handleSubmit} className={styles.stripeFields}>
       <div className={styles.field}>
-        <label className="label">Card details</label>
+        <label className="label">{t('checkout.cardDetails')}</label>
         <div className="input" style={{ paddingTop: '0.75rem', paddingBottom: '0.75rem' }}>
           <CardElement options={CARD_ELEMENT_OPTIONS} onChange={(e) => setCardError(e.error?.message || null)} />
         </div>
         {cardError && <span style={{ color: 'var(--color-danger)', fontSize: '0.8rem', marginTop: 6 }}>{cardError}</span>}
         <span style={{ fontSize: '0.75rem', color: 'var(--color-charcoal-soft)', marginTop: 8 }}>
-          Test mode — try 4242 4242 4242 4242 (any future expiry / CVC) for an instant success,
-          or 4000 0025 0000 3155 to see the 3D Secure challenge.
+          {t('checkout.cardTestHint', { card: '4242 4242 4242 4242', card3ds: '4000 0025 0000 3155' })}
         </span>
       </div>
       <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-3)' }} disabled={!stripe || submitting}>
-        {submitting ? 'Confirming payment…' : `Pay $${amount}`}
+        {submitting ? t('checkout.confirmingPayment') : t('checkout.payCard', { amount: `$${amount}` })}
       </button>
     </form>
   );

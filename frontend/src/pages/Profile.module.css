@@ -4,7 +4,7 @@
 .sectionTitle { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 700; color: var(--color-forest); margin-bottom: var(--space-4); }
 
 .avatarRow { display: flex; align-items: center; gap: var(--space-5); margin-bottom: var(--space-5); padding-bottom: var(--space-5); border-bottom: 1px solid var(--color-line); }
-.avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--color-forest); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; font-family: var(--font-display); box-shadow: 0 4px 12px rgba(13, 79, 60, 0.25); }
+.avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--color-forest); color: var(--color-white); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; font-family: var(--font-display); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); }
 
 .infoList { display: flex; flex-direction: column; gap: var(--space-3); }
 .infoRow { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; color: var(--color-charcoal); }

@@ -36,6 +36,7 @@ function publicUser(row) {
     emailVerified: !!row.email_verified,
     twoFactorEnabled: !!row.two_factor_enabled,
     avatarUrl: row.avatar_url,
+    language: row.language || 'en',
   };
 }
 
@@ -479,13 +480,28 @@ async function disableTwoFactor(req, res, next) {
 // ---------------------------------------------------------------------
 async function updateMe(req, res, next) {
   try {
-    const { fullName, phoneNumber } = req.body;
-    await pool.query('UPDATE users SET full_name = ?, phone_number = ? WHERE id = ?', [
-      fullName,
-      phoneNumber || null,
-      req.user.id,
-    ]);
-    await recordAudit({ userId: req.user.id, action: 'PROFILE_UPDATED', entityType: 'user', entityId: req.user.id, req });
+    // Field-dynamic update: only the fields present in the body are written,
+    // so partial PATCHes (e.g. { language } from the language switcher) never
+    // clobber the other profile columns.
+    const { fullName, phoneNumber, language } = req.body;
+    const updates = [];
+    const params = [];
+    if (fullName) {
+      updates.push('full_name = ?');
+      params.push(fullName);
+    }
+    if (phoneNumber !== undefined) {
+      updates.push('phone_number = ?');
+      params.push(phoneNumber || null);
+    }
+    if (language !== undefined) {
+      updates.push('language = ?');
+      params.push(language);
+    }
+    if (updates.length) {
+      await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, [...params, req.user.id]);
+      await recordAudit({ userId: req.user.id, action: 'PROFILE_UPDATED', entityType: 'user', entityId: req.user.id, req });
+    }
 
     const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [req.user.id]);
     res.json({ message: 'Profile updated successfully.', user: publicUser(rows[0]) });

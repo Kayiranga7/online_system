@@ -1,59 +1,85 @@
 .page {}
 
+/* --- Hero: landscaping photograph as a short banner at the top of the
+   page, with a forest scrim + aurora layered over it so the white
+   headline stays readable. --- */
 .hero {
-  background: linear-gradient(135deg, var(--color-forest) 0%, #0A3D2E 50%, #072E22 100%);
-  padding: var(--space-8) 0;
+  /* --hero-image / --hero-image-modern / --hero-lqip come from utils/heroBackground.js.
+     The inlined --hero-lqip paints instantly beneath the photo (no blank flash). */
+  background-image:
+    linear-gradient(180deg, rgba(11, 30, 20, 0.62) 0%, rgba(11, 30, 20, 0.42) 52%, rgba(11, 30, 20, 0.78) 100%),
+    var(--hero-image),
+    var(--hero-lqip);
+  background-size: cover, cover, cover;
+  background-position: center, center 42%, center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  padding: var(--space-7) 0;
   position: relative;
   overflow: hidden;
 }
-.hero::before {
+/* Upgrade the photo to AVIF/WebP where image-set() is supported */
+@supports (background-image: image-set(url("x") type("image/avif"))) {
+  .hero {
+    background-image:
+      linear-gradient(180deg, rgba(11, 30, 20, 0.62) 0%, rgba(11, 30, 20, 0.42) 52%, rgba(11, 30, 20, 0.78) 100%),
+      var(--hero-image-modern),
+      var(--hero-lqip);
+  }
+}
+/* --- Animated aurora orbs behind the headline (matches auth deco) ---
+   Soft radial falloffs, transform-only drift, pauses with reduced motion. */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.aurora::before,
+.aurora::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  border-radius: 50%;
+  will-change: transform;
 }
-.hero::after {
-  content: '';
-  position: absolute;
-  right: -5%;
-  top: -30%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(201, 149, 60, 0.12), transparent 70%);
+.aurora::before {
+  width: 560px;
+  height: 560px;
+  right: -8%;
+  top: -32%;
+  background: radial-gradient(circle, var(--orb-a, rgba(80, 200, 120, 0.2)), transparent 66%);
+  animation: auroraDriftA 19s ease-in-out infinite alternate;
 }
+.aurora::after {
+  width: 460px;
+  height: 460px;
+  left: -10%;
+  bottom: -34%;
+  background: radial-gradient(circle, var(--orb-b, rgba(167, 243, 208, 0.12)), transparent 64%);
+  animation: auroraDriftB 27s ease-in-out infinite alternate;
+}
+/* Glows deepen slightly on the charcoal-green dark gradient */
+[data-theme='dark'] .aurora::before { --orb-a: rgba(52, 211, 153, 0.22); }
+[data-theme='dark'] .aurora::after { --orb-b: rgba(134, 239, 172, 0.13); }
 .heroInner { max-width: 680px; position: relative; z-index: 1; }
-.heroTag {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-terracotta);
-  background: rgba(201, 149, 60, 0.15);
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  margin-bottom: var(--space-5);
-  border: 1px solid rgba(201, 149, 60, 0.25);
-}
 .heroTitle {
-  font-size: 2.8rem;
+  font-size: 2.9rem;
   font-weight: 700;
-  color: #fff;
-  line-height: 1.1;
+  color: #FFFFFF;
+  line-height: 1.08;
   margin-bottom: var(--space-5);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 18px rgba(11, 30, 20, 0.55);
 }
 .heroSub {
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.78);
   line-height: 1.7;
   margin-bottom: var(--space-6);
   max-width: 540px;
+  text-shadow: 0 1px 12px rgba(11, 30, 20, 0.5);
 }
-.heroActions { display: flex; gap: var(--space-3); flex-wrap: wrap;}
+.heroActions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 
 .features { padding: var(--space-8) 0; }
 .featGrid {
@@ -69,14 +95,40 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  transition: all 0.25s ease;
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-spring), border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+/* Forest wash that fades in from the top edge on hover */
+.featCard::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 .featCard:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
+  border-color: var(--color-line-strong);
 }
+.featCard:hover::before { opacity: 1; }
 .featCard h3 { font-size: 1.05rem; font-weight: 700; }
 .featCard p { color: var(--color-charcoal-soft); font-size: 0.9rem; line-height: 1.6; }
+
+/* Bottom edge fades into whatever surface follows the hero */
+.heroFade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 90px;
+  background: linear-gradient(180deg, transparent, var(--scrim));
+  pointer-events: none;
+  z-index: 1;
+}
 
 .showcase { padding: var(--space-8) 0; background: var(--color-cream); }
 .showcaseAlt { background: var(--color-sage); }
@@ -94,7 +146,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-terracotta);
+  color: var(--accent-strong);
   margin-bottom: var(--space-2);
 }
 .showcaseTitle {
@@ -108,12 +160,13 @@
   gap: 0.35rem;
   font-weight: 600;
   font-size: 0.9rem;
-  color: var(--color-forest);
+  color: var(--accent-strong);
   white-space: nowrap;
-  transition: color 0.2s ease;
+  transition: gap 0.2s var(--ease-spring), color 0.2s ease;
 }
 .showcaseLink:hover {
-  color: var(--color-forest-light);
+  color: var(--accent);
+  gap: 0.6rem;
 }
 .showcaseGrid {
   display: grid;
@@ -122,6 +175,6 @@
 }
 
 @media (max-width: 640px) {
-  .heroTitle { font-size: 1.9rem; }
+  .heroTitle { font-size: 2rem; }
   .showcaseTitle { font-size: 1.4rem; }
 }

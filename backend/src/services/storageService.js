@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const logger = require('../config/logger');
 
 /**
@@ -36,7 +36,7 @@ if (USE_S3) {
  * Persists a file buffer under the given category/filename and returns
  * the public-facing URL to store in the database.
  */
-async function saveFile({ category, filename, buffer, mimetype }) {
+async function saveFile({ category, filename, buffer, mimetype, isPrivate = false }) {
   const key = `${category}/${filename}`;
 
   if (USE_S3) {
@@ -45,7 +45,7 @@ async function saveFile({ category, filename, buffer, mimetype }) {
       Key: key,
       Body: buffer,
       ContentType: mimetype,
-      ACL: process.env.S3_PUBLIC_READ === 'false' ? undefined : 'public-read',
+      ACL: isPrivate || process.env.S3_PUBLIC_READ === 'false' ? undefined : 'public-read',
     }));
     return urlFor(key);
   }
@@ -55,6 +55,35 @@ async function saveFile({ category, filename, buffer, mimetype }) {
   fs.mkdirSync(fullDir, { recursive: true });
   fs.writeFileSync(path.join(fullDir, filename), buffer);
   return `/uploads/${key}`;
+}
+
+function storageKey(urlOrKey) {
+  return urlOrKey
+    .replace(/^\/?uploads\//, '')
+    .replace(/^https?:\/\/[^/]+\//, '')
+    .replace(/^\//, '');
+}
+
+async function readFile(urlOrKey) {
+  const key = storageKey(urlOrKey);
+  if (USE_S3) {
+    const result = await s3Client.send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key }));
+    return {
+      buffer: Buffer.from(await result.Body.transformToByteArray()),
+      contentType: result.ContentType || 'application/octet-stream',
+    };
+  }
+
+  const uploadDir = process.env.UPLOAD_DIR || './uploads';
+  const fullPath = path.resolve(uploadDir, key);
+  const rootPath = path.resolve(uploadDir);
+  if (!fullPath.startsWith(`${rootPath}${path.sep}`)) throw new Error('Invalid storage key.');
+  const ext = path.extname(fullPath).toLowerCase();
+  const contentType = ({
+    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+    '.webp': 'image/webp', '.gif': 'image/gif', '.pdf': 'application/pdf',
+  })[ext] || 'application/octet-stream';
+  return { buffer: fs.readFileSync(fullPath), contentType };
 }
 
 async function deleteFile(urlOrKey) {
@@ -80,4 +109,4 @@ function urlFor(key) {
   return `https://${process.env.S3_BUCKET}.s3.${process.env.S3_REGION || 'us-east-1'}.amazonaws.com/${key}`;
 }
 
-module.exports = { saveFile, deleteFile, isUsingS3: () => USE_S3 };
+module.exports = { saveFile, deleteFile, readFile, isUsingS3: () => USE_S3 };
