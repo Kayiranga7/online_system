@@ -38,6 +38,7 @@ import TransferDetailPage from './pages/TransferDetailPage';
 import NotificationDetailPage from './pages/NotificationDetailPage';
 import KycPage from './pages/KycPage';
 import KycReviewPage from './pages/KycReviewPage';
+import EmailQueuePage from './pages/EmailQueuePage';
 
 import './styles/tokens.css';
 
@@ -104,6 +105,7 @@ export default function App() {
                 <Route path="/admin/plants" element={<ProtectedRoute roles={['admin']}><AdminCatalogPage /></ProtectedRoute>} />
                 <Route path="/admin/payments" element={<ProtectedRoute roles={['admin']}><PaymentsPage /></ProtectedRoute>} />
                 <Route path="/admin/kyc" element={<ProtectedRoute roles={['admin', 'manager']}><KycReviewPage /></ProtectedRoute>} />
+                <Route path="/admin/emails" element={<ProtectedRoute roles={['admin']}><EmailQueuePage /></ProtectedRoute>} />
 
                 {/* Employee */}
                 <Route path="/employee/tasks" element={<ProtectedRoute roles={['employee']}><EmployeeTasksPage /></ProtectedRoute>} />

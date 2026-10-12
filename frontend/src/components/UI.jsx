@@ -187,9 +187,9 @@ export function ToastProvider() {
 /* ─── StatusBadge ─── */
 const STATUS_STYLES = {
   paid: 'badge-green', completed: 'badge-green', active: 'badge-green', approved: 'badge-green',
-  in_progress: 'badge-green', delivered: 'badge-green', installed: 'badge-green',
+  in_progress: 'badge-green', delivered: 'badge-green', installed: 'badge-green', sent: 'badge-green',
   processing: 'badge-amber', assigned: 'badge-amber', pending: 'badge-amber', pending_payment: 'badge-amber',
-  pending_approval: 'badge-amber', open: 'badge-amber', in_review: 'badge-amber',
+  pending_approval: 'badge-amber', open: 'badge-amber', in_review: 'badge-amber', queued: 'badge-amber',
   cancelled: 'badge-red', suspended: 'badge-red', rejected: 'badge-red', failed: 'badge-red',
   low: 'badge-neutral', medium: 'badge-amber', high: 'badge-red', urgent: 'badge-red',
 };

@@ -53,6 +53,7 @@ app.use('/api/equipment', require('./routes/equipmentRoutes'));
 app.use('/api/transfers', require('./routes/transferRoutes'));
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/emails', require('./routes/emailRoutes'));
 app.use('/api/escalations', require('./routes/escalationRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/uploads', require('./routes/uploadRoutes'));

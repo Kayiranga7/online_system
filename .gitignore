@@ -7,4 +7,5 @@ online_system.sql
 imizi_db.sql
 frontend/dist/
 backend/logs/
+backend/certs/
 backend/uploads/

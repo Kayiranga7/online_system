@@ -64,7 +64,8 @@ a genuinely usable system end-to-end.
 
 ### Module 4 — Operations & Notifications
 - Real-time in-app notifications via Socket.IO (per-user and per-role rooms)
-- Email notifications (Nodemailer, queued in `email_queue` table for retry/audit)
+- Email notifications through a transactional provider API (Resend) or any SMTP
+  relay, queued in the `email_queue` table for retry/audit
 - Escalation/dispute system routed to Manager + Admin
 - Role-specific dashboard with KPIs (admin: revenue & district breakdown chart;
   manager: district orders/tasks/employees; employee: active/completed tasks;
@@ -146,11 +147,45 @@ DB_NAME=imizi_db
 JWT_ACCESS_SECRET=<openssl rand -base64 48>
 JWT_REFRESH_SECRET=<openssl rand -base64 48>
 ```
-Google OAuth and SMTP are optional for local testing — the app degrades gracefully
-(emails log to console instead of sending if `SMTP_USER`/`SMTP_PASSWORD` are blank;
-the Google login route simply won't work without `GOOGLE_CLIENT_ID`). The SMTP
-connection is verified at startup with a 5-6s timeout, so an unreachable/misconfigured
-SMTP host logs a warning rather than hanging the server.
+Google OAuth and email are optional for local testing — the app degrades gracefully
+(emails log to the console instead of sending when no email provider is configured;
+the Google login route simply won't work without `GOOGLE_CLIENT_ID`).
+
+**Email:** `EMAIL_PROVIDER` picks the transport — `resend` (a transactional
+provider's HTTPS API, the production path) or `smtp` (any relay through Nodemailer:
+`smtp.resend.com`, `smtp.postmarkapp.com`, a self-hosted server, or a capture tool
+like Mailtrap for staging). Leave it unset to infer the transport from whichever
+credentials are present. For production sending:
+
+1. Create a [Resend](https://resend.com) API key and set `RESEND_API_KEY` (free tier:
+   3,000 emails/month, 100/day)
+2. Add a sending domain in Resend and publish the SPF/DKIM records it shows you
+3. Set `EMAIL_FROM` to an address on that verified domain — until then
+   `onboarding@resend.dev` only delivers to your own Resend account address
+
+The transport is verified at startup (Resend: key accepted + which domains are
+verified; SMTP: connection and credentials) with a 5-6s timeout, so a misconfigured
+provider logs a warning rather than hanging the server. Sending through a personal
+Gmail mailbox is supported via `EMAIL_PROVIDER=smtp` for local testing only.
+
+**Retrying failures:** sending happens in the background, so `/admin/emails` (Admin)
+shows the queue - with counts taken over the whole table, so failures stay visible
+while the list is filtered - and can re-send them (`POST /api/emails/retry` for the
+batch, `POST /api/emails/:id/retry` for one row; `{ "dryRun": true }` returns the plan
+without sending). The same logic runs headlessly:
+
+```bash
+cd backend
+node scripts/retry-failed-emails.js             # dry run - shows what would be re-sent
+node scripts/retry-failed-emails.js --apply     # actually re-send
+```
+
+Verification and password-reset links are single-use, so a row whose link has expired
+or already been used is skipped rather than re-sending a dead link; everything else
+(order, KYC, task and transfer notices) has no expiring link and is retried. A run is
+refused outright when no provider is configured, because delivery would be a no-op
+while the rows were marked `sent`. Retrying updates the original row - attempts counts
+failed deliveries - so a row that succeeds on retry reads as "sent, after 1 failure".
 
 **Payments:** Checkout supports MTN MoMo. To exercise the local simulated flow, set
 `PAYMENTS_SIMULATION_ENABLED=true` with `NODE_ENV=development` or `test`. Production
@@ -204,9 +239,11 @@ have been exercised in this environment.
   garden 3D models ship with the seed data (a stand-in placeholder model wasn't
   bundled either, to avoid shipping irrelevant demo content). Admins attach real
   assets via the Catalog management page once available.
-- **Email delivery** needs real SMTP credentials (Mailtrap for staging, SES/SendGrid
-  for production) — currently logs to console when unconfigured, and times out
-  safely (~5s) rather than hanging if a host is set but unreachable.
+- **Email delivery** is coded against Resend's HTTPS API (with any SMTP relay as an
+  alternative transport), but was only exercised against a stubbed API in this
+  environment — real delivery needs a Resend API key and a verified sending domain.
+  Unconfigured it logs to the console, and a bad key or unreachable SMTP host times
+  out (~5-6s) rather than hanging startup.
 - **S3 storage** is coded against the AWS SDK v3 client and works with any
   S3-compatible provider, but wasn't tested against a live bucket in this
   environment — local disk storage was verified end-to-end instead.

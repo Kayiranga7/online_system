@@ -4,7 +4,7 @@ import {
   ShoppingCart, Bell, Menu, X, ChevronDown, ChevronRight, LogOut, User,
   LayoutDashboard, Sun, Moon, Globe, Check, Home, Users, UsersRound, ShoppingBag,
   Leaf, CreditCard, ClipboardList, Wrench, Building2, ArrowLeftRight, PencilRuler,
-  Heart, CalendarDays,
+  Heart, CalendarDays, Mail,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -22,6 +22,7 @@ const ROLE_NAV = {
     { to: '/admin/orders', key: 'nav.orders' },
     { to: '/admin/plants', key: 'nav.catalog' },
     { to: '/admin/payments', key: 'nav.payments' },
+    { to: '/admin/emails', key: 'nav.emails' },
   ],
   manager: [
     { to: '/home', key: 'nav.home' },
@@ -60,6 +61,7 @@ const NAV_ICONS = {
   'nav.orders': ShoppingBag,
   'nav.catalog': Leaf,
   'nav.payments': CreditCard,
+  'nav.emails': Mail,
   'nav.tasks': ClipboardList,
   'nav.myTasks': ClipboardList,
   'nav.employees': UsersRound,
