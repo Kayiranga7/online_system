@@ -13,7 +13,13 @@ const pool = mysql.createPool({
   decimalNumbers: true, // return DECIMAL columns as JS numbers, not strings
   timezone: 'Z',
 });
-
+console.log('[db] Connection target:', {
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 3306,
+  databaseConfigured: Boolean(process.env.DB_NAME),
+  userConfigured: Boolean(process.env.DB_USER),
+  passwordConfigured: Boolean(process.env.DB_PASSWORD),
+});
 // Quick startup check so failures surface immediately instead of on first request
 async function verifyConnection() {
   try {
