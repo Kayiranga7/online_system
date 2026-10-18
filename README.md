@@ -231,7 +231,99 @@ have been exercised in this environment.
 
 ---
 
-## 5. Known gaps / production setup
+## 5. Deploying
+
+The frontend is a static bundle and the backend is a long-running Node process
+with a MySQL connection and a Socket.IO server, so they are deployed separately:
+the frontend to any static host, the backend to a host that keeps a process
+alive (Render, Railway, Fly, a VPS).
+
+Three settings cause almost every "it works locally but not deployed" failure:
+
+1. **`VITE_API_URL` must be set before the frontend build.** It is inlined at
+   build time, so set it in the static host's build environment and redeploy
+   after changing it. Use the API origin only (`https://api.example.com`) -
+   `/api` is appended by the app, and a trailing slash or an existing `/api`
+   suffix is normalized away. Without it the bundle calls `/api` on the static
+   host itself, which answers with `index.html`, so the app fails with JSON
+   parse errors and 404s.
+2. **`CLIENT_URL` on the backend must be the exact deployed frontend origin.**
+   A mismatch (wrong scheme, `www.`, a trailing slash, a preview URL instead of
+   the production one) blocks every browser request with a CORS error. Set it in
+   the backend host's environment, not `.env`, and comma-separate several
+   origins if staging and production share a backend.
+3. **The refresh cookie must be allowed to travel.** It is `httpOnly`, so it is
+   the only thing keeping a user signed in after a reload. Same site (one
+   origin, or `app.example.com` + `api.example.com`) needs `COOKIE_SAMESITE=lax`;
+   different sites (`app.vercel.app` + `api.onrender.com`) need
+   `COOKIE_SAMESITE=none` **and** `COOKIE_SECURE=true` over HTTPS. Get this wrong
+   and every reload silently logs the user out. The backend logs the effective
+   `sameSite`/`secure` values and the allowed origins at boot so this is checkable
+   from the deploy log.
+
+Also required on the backend: `NODE_ENV=production`, the `DB_*` variables for a
+reachable MySQL instance, both `JWT_*` secrets, and `npm run migrate` against
+that database (the schema is not created by the app). `PORT` is read from the
+environment, which most hosts set automatically.
+
+### Railway (backend + database) + Vercel (frontend)
+
+Backend variables on Railway:
+
+```
+NODE_ENV=production
+CLIENT_URL=https://<your-app>.vercel.app     # exact origin, no trailing slash
+COOKIE_SAMESITE=none                          # the two hosts are different sites
+COOKIE_SECURE=true
+DB_HOST=${{MySQL.MYSQLHOST}}                   # Railway reference variables, or
+DB_PORT=${{MySQL.MYSQLPORT}}                   # the values shown on the MySQL
+DB_USER=${{MySQL.MYSQLUSER}}                   # service's Variables tab
+DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+DB_NAME=${{MySQL.MYSQLDATABASE}}
+JWT_ACCESS_SECRET=<openssl rand -base64 64>
+JWT_REFRESH_SECRET=<openssl rand -base64 64>
+```
+
+`COOKIE_SAMESITE=none` is what makes the refresh cookie travel between the two
+domains; without it the browser withholds it and every reload logs the user out.
+The backend prints `Refresh cookie: sameSite=… secure=…` at boot - if it says
+`lax` on a two-domain deployment, the variable did not reach the service.
+
+Note that `SameSite=None` cookies are *third-party* cookies: Safari blocks them
+by default, and Chrome is progressively restricting them. Serving the API under
+the same site as the frontend (a custom domain such as `api.example.com` with
+the app on `example.com`, or proxying `/api` through the frontend host) avoids
+that class of failure entirely, because the cookie becomes first-party.
+
+**Uploads do not survive a deploy by default.** The container filesystem is
+rebuilt on every release, so files written there disappear and the database is
+left pointing at images that no longer exist (they 404 even once the URL is
+correct). Either attach a Railway volume - the app picks up
+`RAILWAY_VOLUME_MOUNT_PATH` automatically, or set `UPLOAD_DIR` to the mount path
+- or configure object storage by setting `S3_BUCKET` plus `S3_ENDPOINT`,
+`S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` for any S3-compatible
+provider (Cloudflare R2, Backblaze B2, DigitalOcean Spaces, AWS S3). The backend
+logs the resolved uploads directory at boot and warns when it is ephemeral.
+Files already uploaded from a local machine are not in the deployed environment.
+`scripts/migrate-uploads.js` moves them: it reads `backend/uploads`, stores each
+file through the same storage layer the app writes with (so S3-compatible
+credentials or the volume path decide the destination), and repoints the rows
+that reference them. It is a dry run unless you pass `--apply`:
+
+```
+node scripts/migrate-uploads.js                 # what would be copied/rewritten
+node scripts/migrate-uploads.js --apply         # copy + rewrite
+node scripts/migrate-uploads.js --apply --verify  # also read every file back
+```
+
+Run it where the files and the destination are both reachable — on the server
+for a volume (`UPLOAD_DIR` = mount path), or locally with the bucket's
+credentials. It never deletes the source, is safe to re-run, and leaves KYC
+rows alone because they store a storage key rather than a URL. Anything not
+referenced by a row is still copied, and `--only=`/`--limit=` make a partial run
+possible.
+
+## 6. Known gaps / production setup
 
 - **Payment verification** requires MTN sandbox or production credentials to exercise
   provider calls. Local simulation is development-only and must be explicitly enabled.

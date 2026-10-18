@@ -1,6 +1,7 @@
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { resolveImageUrl } from '../utils/images';
 import styles from './CatalogCard.module.css';
 
 function Stars({ rating }) {
@@ -14,7 +15,7 @@ function Stars({ rating }) {
 
 export function PlantCard({ plant, onAddToCart, onWishlist, wishlistedIds = new Set(), index = 0 }) {
   const { t } = useLanguage();
-  const img = plant.primary_image || '/api/placeholder/300/220';
+  const img = resolveImageUrl(plant.primary_image);
   return (
     <div className={`${styles.card} card-in`} style={{ '--stagger-i': index }}>
       <Link to={`/plants/${plant.id}`} className={styles.imgWrap}>
@@ -59,7 +60,7 @@ export function PlantCard({ plant, onAddToCart, onWishlist, wishlistedIds = new 
 
 export function DesignCard({ design, onAddToCart, index = 0 }) {
   const { t } = useLanguage();
-  const img = design.primary_image || '/api/placeholder/300/220';
+  const img = resolveImageUrl(design.primary_image);
   return (
     <div className={`${styles.card} card-in`} style={{ '--stagger-i': index }}>
       <Link to={`/designs/${design.id}`} className={styles.imgWrap}>

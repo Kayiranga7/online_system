@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Smartphone, X } from 'lucide-react';
+import { assetUrl } from '../services/config';
 import styles from './ARPreview.module.css';
 
 /**
@@ -46,7 +47,10 @@ export default function ARPreview({ modelUrl, posterUrl, name }) {
             </button>
             {/* eslint-disable-next-line react/no-unknown-property */}
             <model-viewer
-              src={modelUrl}
+              src={assetUrl(modelUrl)}
+              // The caller resolves the poster (resolveImageUrl), so it is
+              // already either absolute or a bundled placeholder - running it
+              // through assetUrl again would point a bundled asset at the API.
               poster={posterUrl}
               alt={`3D model of ${name}`}
               camera-controls

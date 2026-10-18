@@ -7,6 +7,8 @@ require('dotenv').config();
 
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
+const { corsOrigin } = require('./config/cors');
+const { uploadDir } = require('./config/paths');
 
 const app = express();
 
@@ -14,7 +16,7 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: corsOrigin,
     credentials: true,
   })
 );
@@ -34,7 +36,13 @@ app.use('/uploads', (req, res, next) => {
   if (/^\/?kyc-documents(?:\/|$)/i.test(decodedPath)) return res.sendStatus(404);
   next();
 });
-app.use('/uploads', express.static(process.env.UPLOAD_DIR || 'uploads'));
+// In a split deployment the browser loads these files from the frontend's
+// origin, and helmet's default `Cross-Origin-Resource-Policy: same-origin`
+// makes it block the response (ERR_BLOCKED_BY_RESPONSE.NotSameOrigin) even
+// though the server answered 200 - photos and 3D models then fail silently.
+// Public uploads opt out of that policy; every other response keeps it.
+app.use('/uploads', helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));
+app.use('/uploads', express.static(uploadDir()));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

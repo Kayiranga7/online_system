@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Star, ShoppingCart, Heart, Sun, Droplets, Ruler } from 'lucide-react';
 import api from '../services/api';
+import { resolveImageUrl } from '../utils/images';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { FullPageSpinner, toast } from '../components/UI';
@@ -57,7 +58,7 @@ export default function PlantDetailPage() {
   if (loading) return <FullPageSpinner />;
   if (!data) return null;
   const { plant, images, reviews } = data;
-  const img = images?.[0]?.image_url || plant.primary_image;
+  const img = resolveImageUrl(images?.[0]?.image_url || plant.primary_image);
 
   const handleAdd = async () => {
     try { await addItem('plant', plant.id, qty); toast('Added to cart!', 'success'); }

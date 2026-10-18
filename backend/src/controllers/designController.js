@@ -1,6 +1,7 @@
 const { pool } = require('../config/database');
 const { AppError } = require('../middleware/errorHandler');
 const { recordAudit } = require('../services/auditService');
+const { stripPlaceholderImages } = require('../utils/media');
 
 async function listDesigns(req, res, next) {
   try {
@@ -33,7 +34,7 @@ async function listDesigns(req, res, next) {
     );
     const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM designs d WHERE ${conditions.join(' AND ')}`, params);
 
-    res.json({ designs: rows, pagination: { page: Number(page), limit: Number(limit), total } });
+    res.json({ designs: stripPlaceholderImages(rows), pagination: { page: Number(page), limit: Number(limit), total } });
   } catch (err) {
     next(err);
   }
@@ -55,7 +56,7 @@ async function getDesign(req, res, next) {
       [req.params.id]
     );
 
-    res.json({ design: rows[0], images, includedPlants: plants, reviews });
+    res.json({ design: stripPlaceholderImages(rows[0]), images: stripPlaceholderImages(images), includedPlants: plants, reviews });
   } catch (err) {
     next(err);
   }
@@ -131,7 +132,9 @@ async function addDesignImage(req, res, next) {
 
     const [result] = await pool.query(
       `INSERT INTO design_images (design_id, image_url, ar_model_url, is_primary) VALUES (?, ?, ?, ?)`,
-      [req.params.id, imageUrl || `/placeholder/${req.params.id}.jpg`, arModelUrl || null, !!isPrimary]
+      // imageUrl is optional (a design may have only a 3D model), in which case
+      // the column stays NULL and the client shows its bundled placeholder.
+      [req.params.id, imageUrl || null, arModelUrl || null, !!isPrimary]
     );
 
     await recordAudit({ userId: req.user.id, action: 'DESIGN_IMAGE_ADDED', entityType: 'design', entityId: req.params.id, req });

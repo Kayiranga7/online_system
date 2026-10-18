@@ -1,0 +1,16 @@
+# Netlify build settings for the frontend (this file lives at the repo root so
+# `base` can point at the frontend subdirectory).
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# React Router uses real paths (/plants, /dashboard, ...). Without this rewrite a
+# hard refresh or a shared link hits the CDN, 404s, and never reaches the app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

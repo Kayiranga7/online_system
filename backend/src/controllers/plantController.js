@@ -1,6 +1,7 @@
 const { pool } = require('../config/database');
 const { AppError } = require('../middleware/errorHandler');
 const { recordAudit } = require('../services/auditService');
+const { stripPlaceholderImages } = require('../utils/media');
 
 // ---------------------------------------------------------------------
 // GET /api/plants - search & filter catalog
@@ -75,7 +76,7 @@ async function listPlants(req, res, next) {
       params
     );
 
-    res.json({ plants: rows, pagination: { page: Number(page), limit: Number(limit), total } });
+    res.json({ plants: stripPlaceholderImages(rows), pagination: { page: Number(page), limit: Number(limit), total } });
   } catch (err) {
     next(err);
   }
@@ -99,7 +100,7 @@ async function getPlant(req, res, next) {
       [req.params.id]
     );
 
-    res.json({ plant: rows[0], images, reviews });
+    res.json({ plant: stripPlaceholderImages(rows[0]), images: stripPlaceholderImages(images), reviews });
   } catch (err) {
     next(err);
   }
@@ -219,7 +220,7 @@ async function getRecommendations(req, res, next) {
       params
     );
 
-    res.json({ recommendations: rows, basedOn: { district: user?.district_name, climateTag, preferences: prefs || null } });
+    res.json({ recommendations: stripPlaceholderImages(rows), basedOn: { district: user?.district_name, climateTag, preferences: prefs || null } });
   } catch (err) {
     next(err);
   }
@@ -257,7 +258,9 @@ async function addPlantImage(req, res, next) {
 
     const [result] = await pool.query(
       `INSERT INTO plant_images (plant_id, image_url, ar_model_url, is_primary) VALUES (?, ?, ?, ?)`,
-      [req.params.id, imageUrl || `/placeholder/${req.params.id}.jpg`, arModelUrl || null, !!isPrimary]
+      // imageUrl is optional (a plant may have only a 3D model), in which case
+      // the column stays NULL and the client shows its bundled placeholder.
+      [req.params.id, imageUrl || null, arModelUrl || null, !!isPrimary]
     );
 
     await recordAudit({ userId: req.user.id, action: 'PLANT_IMAGE_ADDED', entityType: 'plant', entityId: req.params.id, req });

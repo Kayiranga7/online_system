@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { API_BASE_URL } from './config';
 
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL || ''}/api`,
-  withCredentials: true,
+  baseURL: API_BASE_URL,
+  withCredentials: true, // send httpOnly refresh-token cookie
 });
 
 // Attach access token from memory on every request
@@ -21,12 +22,10 @@ api.interceptors.response.use(
     const original = err.config;
     if (err.response?.status === 401 && err.response?.data?.code === 'TOKEN_EXPIRED' && !original._retry) {
       original._retry = true;
-      if (!refreshing) {
-        refreshing = axios.post('/api/auth/refresh', {}, { withCredentials: true })
-          .then((r) => {
-            window.__imiziAccessToken = r.data.accessToken;
-            refreshing = null;
-          })
+      if (!refreshing) {        refreshing = axios.post(`${API_BASE_URL}/auth/refresh`,
+          {},
+                  { withCredentials: true }
+                  )
           .catch(() => {
             window.__imiziAccessToken = null;
             refreshing = null;

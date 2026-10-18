@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 220" width="300" height="220" role="img" aria-label="No photo yet">
+  <!--
+    Bundled placeholder for catalogue items that have no uploaded photo.
+    Deliberately transparent and monochrome sage so it reads on both the light
+    (#F7F9F8) and dark (#131A15) theme, and carries no text so it needs no
+    translation per locale.
+  -->
+  <g fill="none" stroke="#9DB4A5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 146V74" />
+    <ellipse cx="150" cy="70" rx="11" ry="19" fill="#9DB4A5" fill-opacity="0.16" />
+    <ellipse cx="128" cy="116" rx="21" ry="10" fill="#9DB4A5" fill-opacity="0.16" transform="rotate(-22 128 116)" />
+    <ellipse cx="172" cy="102" rx="21" ry="10" fill="#9DB4A5" fill-opacity="0.16" transform="rotate(22 172 102)" />
+    <path d="M118 152h64l-9 34h-46z" />
+    <path d="M111 145h78" />
+  </g>
+</svg>

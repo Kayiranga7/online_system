@@ -15,13 +15,7 @@ const BCRYPT_ROUNDS = 12;
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_DURATION_MINUTES = 15;
 
-const REFRESH_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: '/api/auth',
-};
+const { refreshCookieOptions } = require('../config/session');
 
 function publicUser(row) {
   return {
@@ -47,7 +41,7 @@ async function issueTokens(res, user) {
     `UPDATE users SET refresh_token_hash = ?, refresh_token_expires = (NOW() + INTERVAL 7 DAY) WHERE id = ?`,
     [hashToken(refreshToken), user.id]
   );
-  res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
+  res.cookie('refreshToken', refreshToken, refreshCookieOptions());
   return accessToken;
 }
 

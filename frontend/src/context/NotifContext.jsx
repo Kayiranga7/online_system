@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import api from '../services/api';
+import { SOCKET_URL } from '../services/config';
+import { createRefreshGuard, isTokenExpired } from '../utils/sessionGuard';
 
 const NotifContext = createContext(null);
 
@@ -29,7 +31,9 @@ export function NotifProvider({ children }) {
     // (re)connect attempt, so a token refreshed by the axios interceptor in the
     // background is picked up automatically instead of the socket being stuck
     // retrying with the token that was valid when the page first loaded.
-    const socket = io('/', {
+    // On a split deployment the static host has no /socket.io route, so the
+    // realtime connection must target the API origin (same origin in dev).
+    const socket = io(SOCKET_URL, {
       auth: (cb) => cb({ token: window.__imiziAccessToken }),
       transports: ['websocket'],
     });
@@ -43,13 +47,34 @@ export function NotifProvider({ children }) {
     // If the access token had already expired by the time the socket tried to
     // (re)connect, proactively refresh it via the httpOnly cookie so the next
     // automatic reconnect attempt (built into socket.io-client) succeeds.
+    //
+    // Bounded on purpose: socket.io retries on its own, so without the guard a
+    // session that cannot be refreshed re-requested /auth/refresh every few
+    // seconds indefinitely.
+    const refreshGuard = createRefreshGuard();
+    socket.on('connect', () => refreshGuard.succeeded());
     socket.on('connect_error', async () => {
+      // A handshake only fails for an expired token when refreshing could help;
+      // a network blip is left to socket.io's own backoff.
+      if (!isTokenExpired(window.__imiziAccessToken)) return;
+
+      const verdict = refreshGuard.check();
+      if (verdict === 'stop') {
+        // The refresh cookie is gone or unusable. Stop reconnecting and end the
+        // session instead of hammering the endpoint.
+        socket.disconnect();
+        socketRef.current = null;
+        window.dispatchEvent(new Event('imizi:logout'));
+        return;
+      }
+      if (verdict === 'wait') return;
+
       try {
         const r = await api.post('/auth/refresh');
         window.__imiziAccessToken = r.data.accessToken;
+        refreshGuard.succeeded();
       } catch {
-        // Refresh token is gone too - user will be logged out by the axios
-        // interceptor's own refresh flow on their next API call.
+        // Unusable session - the next attempt is rate-limited by the guard.
       }
     });
 

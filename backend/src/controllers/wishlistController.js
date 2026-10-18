@@ -1,5 +1,6 @@
 const { pool } = require('../config/database');
 const { AppError } = require('../middleware/errorHandler');
+const { stripPlaceholderImages } = require('../utils/media');
 
 async function getWishlist(req, res, next) {
   try {
@@ -26,7 +27,9 @@ async function getWishlist(req, res, next) {
       items: items.map((i) => ({
         wishlistId: i.id,
         itemType: i.item_type,
-        item: i.item_type === 'plant' ? plants.find((p) => p.id === i.item_id) : designs.find((d) => d.id === i.item_id),
+        item: stripPlaceholderImages(
+          i.item_type === 'plant' ? plants.find((p) => p.id === i.item_id) : designs.find((d) => d.id === i.item_id)
+        ),
       })),
     });
   } catch (err) {

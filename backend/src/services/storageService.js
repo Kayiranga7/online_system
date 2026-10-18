@@ -2,14 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const logger = require('../config/logger');
+const { uploadDir } = require('../config/paths');
 
 /**
  * Storage abstraction: writes go to S3-compatible object storage when
  * S3_BUCKET is configured (works with AWS S3 directly, or any
  * S3-compatible provider - DigitalOcean Spaces, Cloudflare R2, MinIO -
- * by also setting S3_ENDPOINT). Falls back to local disk under
- * UPLOAD_DIR when no bucket is configured, so the app runs zero-config
- * in local development.
+ * by also setting S3_ENDPOINT). Falls back to the disk directory resolved by
+ * config/paths (UPLOAD_DIR, or the mount path of an attached Railway volume)
+ * when no bucket is configured, so the app runs zero-config in development.
  *
  * Callers only deal with this module's interface (save/delete/urlFor) -
  * nothing else in the codebase needs to know which backend is active.
@@ -50,18 +51,31 @@ async function saveFile({ category, filename, buffer, mimetype, isPrivate = fals
     return urlFor(key);
   }
 
-  const uploadDir = process.env.UPLOAD_DIR || './uploads';
-  const fullDir = path.join(uploadDir, category);
+  const fullDir = path.join(uploadDir(), category);
   fs.mkdirSync(fullDir, { recursive: true });
   fs.writeFileSync(path.join(fullDir, filename), buffer);
   return `/uploads/${key}`;
 }
 
+// An uploaded file is identified by its storage key ("<category>/<filename>"),
+// which is what the bucket and the disk layout both use. Database columns hold
+// it in one of three shapes depending on when the row was written, so callers
+// that need to compare references go through here.
 function storageKey(urlOrKey) {
   return urlOrKey
     .replace(/^\/?uploads\//, '')
     .replace(/^https?:\/\/[^/]+\//, '')
     .replace(/^\//, '');
+}
+
+const CONTENT_TYPES = {
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+  '.webp': 'image/webp', '.gif': 'image/gif', '.pdf': 'application/pdf',
+  '.glb': 'model/gltf-binary', '.gltf': 'model/gltf+json',
+};
+
+function contentTypeFor(filename) {
+  return CONTENT_TYPES[path.extname(filename).toLowerCase()] || 'application/octet-stream';
 }
 
 async function readFile(urlOrKey) {
@@ -74,15 +88,10 @@ async function readFile(urlOrKey) {
     };
   }
 
-  const uploadDir = process.env.UPLOAD_DIR || './uploads';
-  const fullPath = path.resolve(uploadDir, key);
-  const rootPath = path.resolve(uploadDir);
+  const rootPath = uploadDir();
+  const fullPath = path.resolve(rootPath, key);
   if (!fullPath.startsWith(`${rootPath}${path.sep}`)) throw new Error('Invalid storage key.');
-  const ext = path.extname(fullPath).toLowerCase();
-  const contentType = ({
-    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
-    '.webp': 'image/webp', '.gif': 'image/gif', '.pdf': 'application/pdf',
-  })[ext] || 'application/octet-stream';
+  const contentType = contentTypeFor(fullPath);
   return { buffer: fs.readFileSync(fullPath), contentType };
 }
 
@@ -94,8 +103,7 @@ async function deleteFile(urlOrKey) {
     return;
   }
 
-  const uploadDir = process.env.UPLOAD_DIR || './uploads';
-  const fullPath = path.join(uploadDir, key);
+  const fullPath = path.join(uploadDir(), key);
   if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
 }
 
@@ -109,4 +117,4 @@ function urlFor(key) {
   return `https://${process.env.S3_BUCKET}.s3.${process.env.S3_REGION || 'us-east-1'}.amazonaws.com/${key}`;
 }
 
-module.exports = { saveFile, deleteFile, readFile, isUsingS3: () => USE_S3 };
+module.exports = { saveFile, deleteFile, readFile, urlFor, storageKey, contentTypeFor, isUsingS3: () => USE_S3 };
