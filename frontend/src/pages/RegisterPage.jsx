@@ -5,6 +5,8 @@ import api from '../services/api';
 import { toast } from '../components/UI';
 import { useLanguage } from '../context/LanguageContext';
 import { heroBackground } from '../utils/heroBackground';
+import { isAuth0Configured } from '../services/auth0';
+import Auth0Button from '../components/Auth0Button';
 import styles from './Auth.module.css';
 
 export default function RegisterPage() {
@@ -53,6 +55,13 @@ export default function RegisterPage() {
         </div>
         <h1 className={styles.heading}>{t('register.heading')}</h1>
         <p className={styles.sub}>{t('register.alreadyRegistered')} <Link to="/login" className={styles.link}>{t('register.signIn')}</Link></p>
+
+        {isAuth0Configured && (
+          <>
+            <Auth0Button />
+            <div className={styles.divider}><span>{t('auth0.or')}</span></div>
+          </>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>

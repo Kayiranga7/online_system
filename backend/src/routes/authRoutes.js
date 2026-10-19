@@ -12,6 +12,7 @@ const {
   updateProfileValidator,
   updatePasswordValidator,
   googleLoginValidator,
+  auth0LoginValidator,
 } = require('../validators/authValidators');
 
 router.post('/register', authLimiter, registerValidator, handleValidation, authController.register);
@@ -19,6 +20,7 @@ router.get('/verify-email', authController.verifyEmail);
 router.post('/resend-verification', authLimiter, forgotPasswordValidator, handleValidation, authController.resendVerificationEmail);
 router.post('/login', authLimiter, loginValidator, handleValidation, authController.login);
 router.post('/google', authLimiter, googleLoginValidator, handleValidation, authController.googleLogin);
+router.post('/auth0', authLimiter, auth0LoginValidator, handleValidation, authController.auth0Login);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
 router.post('/forgot-password', authLimiter, forgotPasswordValidator, handleValidation, authController.forgotPassword);

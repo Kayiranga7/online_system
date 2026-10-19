@@ -8,6 +8,7 @@ const { signAccessToken, signRefreshToken, verifyRefreshToken, hashToken } = req
 const { AppError } = require('../middleware/errorHandler');
 const { sendEmail } = require('../services/emailService');
 const { recordAudit } = require('../services/auditService');
+const { verifyAccessToken: verifyAuth0AccessToken, fetchUserInfo: fetchAuth0UserInfo } = require('../services/auth0Service');
 const logger = require('../config/logger');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -296,6 +297,154 @@ async function googleLogin(req, res, next) {
 }
 
 // ---------------------------------------------------------------------
+// POST /api/auth/auth0
+// body: { accessToken, district?, institutionType?, twoFactorCode? }
+//
+// Auth0 is an additional way in, not a replacement: this endpoint verifies the
+// token, maps it to a row in `users`, then issues the app's own access/refresh
+// pair exactly like password login. Everything downstream (roles, KYC, order
+// gating) keeps working because nothing about the session changes.
+// ---------------------------------------------------------------------
+async function auth0Login(req, res, next) {
+  try {
+    const { accessToken: auth0AccessToken, district, institutionType, twoFactorCode } = req.body;
+
+    const claims = await verifyAuth0AccessToken(auth0AccessToken);
+    const profile = await fetchAuth0UserInfo(auth0AccessToken);
+    if (profile.sub !== claims.sub) {
+      throw new AppError('Auth0 returned a profile for a different account.', 401);
+    }
+
+    const email = typeof profile.email === 'string' ? profile.email.trim().toLowerCase() : '';
+    if (!email) {
+      throw new AppError('Your Auth0 account does not share an email address. Please sign in with your password instead.', 400);
+    }
+
+    const [linkedRows] = await pool.query(
+      'SELECT * FROM users WHERE auth0_id = ? AND deleted_at IS NULL',
+      [profile.sub]
+    );
+    let user = linkedRows[0];
+
+    if (!user) {
+      const [byEmail] = await pool.query('SELECT * FROM users WHERE email = ? AND deleted_at IS NULL', [email]);
+      const existing = byEmail[0];
+
+      if (existing) {
+        // Attach this Auth0 identity to the account already using the address.
+        // Both sides must have proven ownership of it: Auth0 says the address is
+        // verified, and the local account verified it at signup. Skipping the
+        // second check would let anyone create an Auth0 account with someone
+        // else's address and take over the matching local account.
+        if (!profile.email_verified) {
+          throw new AppError('Your Auth0 email address is not verified. Verify it with Auth0 and try again.', 403);
+        }
+        if (!existing.email_verified) {
+          throw new AppError('An account with this email already exists but its email is not verified. Verify it, or sign in with your password.', 403);
+        }
+        if (existing.auth0_id && existing.auth0_id !== profile.sub) {
+          throw new AppError('This email is already linked to a different Auth0 account.', 409);
+        }
+
+        await pool.query('UPDATE users SET auth0_id = ? WHERE id = ?', [profile.sub, existing.id]);
+        user = { ...existing, auth0_id: profile.sub };
+        await recordAudit({
+          userId: existing.id,
+          action: 'AUTH0_ACCOUNT_LINKED',
+          entityType: 'user',
+          entityId: existing.id,
+          req,
+        });
+      }
+    }
+
+    if (!user) {
+      // First Auth0 sign-in. District (delivery routing) and institution type
+      // (business accounts require KYC) are app concepts Auth0 knows nothing
+      // about, so they are collected once by the client before the row is made.
+      if (!district || !institutionType) {
+        return res.status(206).json({
+          requiresProfileCompletion: true,
+          profile: {
+            name: profile.name || profile.nickname || email.split('@')[0],
+            email,
+            picture: profile.picture || null,
+          },
+          message: 'Please select your district and institution type to finish signing up.',
+        });
+      }
+
+      const [districtRow] = await pool.query('SELECT id FROM districts WHERE id = ?', [district]);
+      if (!districtRow.length) throw new AppError('Invalid district selected.', 400);
+
+      const fullName = profile.name || profile.nickname || email.split('@')[0];
+      const [result] = await pool.query(
+        `INSERT INTO users (full_name, email, password_hash, role, institution_type, district_id,
+           auth0_id, avatar_url, email_verified, status)
+         VALUES (?, ?, NULL, 'customer', ?, ?, ?, ?, ?, 'active')`,
+        [fullName, email, institutionType, district, profile.sub, profile.picture || null, !!profile.email_verified]
+      );
+
+      const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
+      user = rows[0];
+      await recordAudit({
+        userId: user.id,
+        action: 'USER_REGISTERED_AUTH0',
+        entityType: 'user',
+        entityId: user.id,
+        req,
+      });
+    }
+
+    if (user.status !== 'active') {
+      throw new AppError('Your account is not active. Please contact support.', 403);
+    }
+
+    if (!user.email_verified) {
+      throw new AppError('Please verify your email address before logging in.', 403);
+    }
+
+    // The password lockout is a deliberate brake on brute force; a second way in
+    // must not walk past it, or an attacker could keep trying passwords and then
+    // switch to Auth0 while the account is locked.
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      const minutesLeft = Math.ceil((new Date(user.locked_until) - new Date()) / 60000);
+      throw new AppError(`Account temporarily locked due to failed attempts. Try again in ${minutesLeft} minute(s).`, 423);
+    }
+
+    // An account protected by the app's own TOTP still needs that code: Auth0
+    // may not have prompted for a second factor, so accepting the token alone
+    // would silently downgrade the account's protection.
+    if (user.two_factor_enabled) {
+      if (!twoFactorCode) {
+        return res.status(206).json({ requiresTwoFactor: true, message: 'Enter your 2FA code to continue.' });
+      }
+      const verified = speakeasy.totp.verify({
+        secret: user.two_factor_secret,
+        encoding: 'base32',
+        token: twoFactorCode,
+        window: 1,
+      });
+      if (!verified) {
+        throw new AppError('Invalid two-factor authentication code.', 401);
+      }
+    }
+
+    await pool.query(
+      `UPDATE users SET failed_login_attempts = 0, locked_until = NULL, last_login_at = NOW(), last_login_ip = ? WHERE id = ?`,
+      [req.ip, user.id]
+    );
+
+    const accessToken = await issueTokens(res, user);
+    await recordAudit({ userId: user.id, action: 'LOGIN_SUCCESS_AUTH0', entityType: 'user', entityId: user.id, req });
+
+    res.json({ accessToken, user: publicUser(user) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---------------------------------------------------------------------
 // POST /api/auth/refresh - rotates refresh token, issues new access token
 // ---------------------------------------------------------------------
 async function refresh(req, res, next) {
@@ -523,6 +672,7 @@ module.exports = {
   resendVerificationEmail,
   login,
   googleLogin,
+  auth0Login,
   refresh,
   logout,
   forgotPassword,

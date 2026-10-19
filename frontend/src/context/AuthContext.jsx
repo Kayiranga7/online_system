@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import { isAuth0Configured, auth0LogoutUrl, AUTH0_SESSION_KEY } from '../services/auth0';
 
 const AuthContext = createContext(null);
 
@@ -26,6 +27,8 @@ export function AuthProvider({ children }) {
     if (res.data.requiresTwoFactor) return { requiresTwoFactor: true };
     storeToken(res.data.accessToken);
     setUser(res.data.user);
+    // Password login means this session is not tied to an Auth0 SSO session.
+    sessionStorage.removeItem(AUTH0_SESSION_KEY);
     return { user: res.data.user };
   }, []);
 
@@ -34,6 +37,26 @@ export function AuthProvider({ children }) {
     if (res.data.requiresProfileCompletion) return { requiresProfileCompletion: true, profile: res.data.profile };
     storeToken(res.data.accessToken);
     setUser(res.data.user);
+    sessionStorage.removeItem(AUTH0_SESSION_KEY);
+    return { user: res.data.user };
+  }, []);
+
+  /**
+   * Completes an Auth0 sign-in: the callback page hands over the token Auth0
+   * issued, and the API answers with the app's own session, exactly like login().
+   * `extra` carries the profile fields (district, institution type) on first
+   * sign-in, or the 2FA code for accounts that have it enabled.
+   */
+  const completeAuth0Login = useCallback(async (accessToken, extra = {}) => {
+    const res = await api.post('/auth/auth0', { accessToken, ...extra });
+    if (res.data.requiresProfileCompletion) {
+      return { requiresProfileCompletion: true, profile: res.data.profile };
+    }
+    if (res.data.requiresTwoFactor) return { requiresTwoFactor: true };
+
+    storeToken(res.data.accessToken);
+    setUser(res.data.user);
+    sessionStorage.setItem(AUTH0_SESSION_KEY, '1');
     return { user: res.data.user };
   }, []);
 
@@ -41,6 +64,14 @@ export function AuthProvider({ children }) {
     await api.post('/auth/logout').catch(() => {});
     storeToken(null);
     setUser(null);
+
+    // Clearing the app session leaves Auth0's SSO session alive, so the next
+    // "Continue with Auth0" click would sign the same person straight back in.
+    // Only follow the Auth0 logout when this browser actually used it.
+    if (isAuth0Configured && sessionStorage.getItem(AUTH0_SESSION_KEY)) {
+      sessionStorage.removeItem(AUTH0_SESSION_KEY);
+      window.location.assign(auth0LogoutUrl());
+    }
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -50,7 +81,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout, refreshUser, storeToken, setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, completeAuth0Login, logout, refreshUser, storeToken, setUser }}>
       {children}
     </AuthContext.Provider>
   );

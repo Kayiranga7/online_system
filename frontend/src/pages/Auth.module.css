@@ -98,6 +98,23 @@
 
 .forgot { font-size: 0.8rem; color: var(--accent-strong); margin-top: 0.4rem; align-self: flex-end; font-weight: 600; }
 
+/* Single sign-on button + the rule separating it from the password form. */
+.ssoBtn { width: 100%; justify-content: center; gap: 0.5rem; }
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+  color: var(--color-charcoal-soft);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.divider::before,
+.divider::after { content: ''; flex: 1; height: 1px; background: var(--color-line); }
+.spin { animation: authSpin 0.9s linear infinite; }
+@keyframes authSpin { to { transform: rotate(360deg); } }
+
 /* Marketing copy floats above the centred card as a caption. */
 .deco {
   position: relative;

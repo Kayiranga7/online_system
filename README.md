@@ -17,6 +17,7 @@ a genuinely usable system end-to-end.
 - Email verification (24h token), bcrypt password hashing (12 rounds)
 - JWT access tokens (15 min) + httpOnly rotating refresh tokens (7 days)
 - Google OAuth sign-in (`google-auth-library`), with first-time profile completion (district/institution type)
+- Auth0 single sign-on (`@auth0/auth0-react`), JWKS-verified access tokens, linked to the same `users` row and app session
 - TOTP-based Two-Factor Authentication (`speakeasy` + QR code), with backup codes
 - Forgot/reset password flow, account lockout after 5 failed logins (15 min)
 - Full RBAC middleware (`authenticate`, `authorize(...roles)`, `scopeToDistrict`)
@@ -208,6 +209,43 @@ npm install
 npm run dev                 # starts on http://localhost:5173, proxies /api to :5000
 ```
 
+### Auth0 sign-in (optional)
+
+Password login works without any of this. To turn on the **Continue with Auth0**
+buttons:
+
+1. In the Auth0 Dashboard create an application of type **Single Page Web
+   Applications** (the PKCE flow needs no client secret).
+2. Create an **API** whose Identifier is the audience the backend validates
+   (e.g. `https://api.imizi.rw`) and enable **Allow Offline Access** on it.
+3. On the SPA application register:
+   - Allowed Callback URLs: `http://localhost:5173/callback`, `https://<site>/callback`
+   - Allowed Logout URLs: `http://localhost:5173`, `https://<site>`
+   - Allowed Web Origins: the same two origins
+4. Set the environment variables.
+
+   Backend `.env`:
+   ```
+   AUTH0_DOMAIN=your-tenant.eu.auth0.com     # no https:// and no trailing slash
+   AUTH0_API_AUDIENCE=https://api.imizi.rw   # the API Identifier, not the client id
+   ```
+
+   Frontend `.env.local` (inlined by `vite build`, so set it where you build):
+   ```
+   VITE_AUTH0_DOMAIN=your-tenant.eu.auth0.com
+   VITE_AUTH0_CLIENT_ID=<the SPA application client id>
+   VITE_AUTH0_AUDIENCE=https://api.imizi.rw
+   ```
+5. Run `npm run migrate` so `007_auth0.sql` adds `users.auth0_id`.
+
+How it works: the SPA runs Authorization Code + PKCE, then posts the access token
+to `POST /api/auth/auth0`. The API verifies signature, issuer and audience against
+the tenant's JWKS, reads the profile from `/userinfo`, links it to the matching
+`users` row (only when Auth0 reports the email as verified) and issues the app's
+normal access/refresh pair - so roles, KYC and the rest are unchanged. First-time
+Auth0 users choose a district and account type; accounts with local 2FA still have
+to enter their code.
+
 ### Demo accounts (after seeding)
 All use password: **`Passw0rd!23`**
 
@@ -339,6 +377,10 @@ possible.
 - **S3 storage** is coded against the AWS SDK v3 client and works with any
   S3-compatible provider, but wasn't tested against a live bucket in this
   environment — local disk storage was verified end-to-end instead.
+- **Auth0** is wired end to end but has only been exercised against a mocked tenant
+  in tests. A live tenant needs the callback/logout/web-origin URLs and the five
+  variables documented above; until then the buttons are hidden and the endpoint
+  answers 503.
 - **KYC storage** must use a private S3 bucket policy in production. KYC objects are
   stored without public URLs and downloaded through an authenticated, district-scoped
   endpoint; keep the bucket itself private so bucket policies cannot bypass the app.

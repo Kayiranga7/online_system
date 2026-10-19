@@ -56,6 +56,13 @@ const googleLoginValidator = [
   body('institutionType').optional().isIn(['personal', 'business']),
 ];
 
+const auth0LoginValidator = [
+  body('accessToken').isString().notEmpty().withMessage('Auth0 access token is required.'),
+  body('district').optional().isInt({ min: 1 }),
+  body('institutionType').optional().isIn(['personal', 'business']),
+  body('twoFactorCode').optional().isLength({ min: 6, max: 6 }),
+];
+
 module.exports = {
   registerValidator,
   loginValidator,
@@ -64,4 +71,5 @@ module.exports = {
   updateProfileValidator,
   updatePasswordValidator,
   googleLoginValidator,
+  auth0LoginValidator,
 };

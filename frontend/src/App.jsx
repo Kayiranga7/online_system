@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Auth0Provider } from '@auth0/auth0-react';
+import { auth0ProviderConfig, isAuth0Configured, AUTH0_CALLBACK_PATH } from './services/auth0';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotifProvider } from './context/NotifContext';
 import { CartProvider } from './context/CartContext';
@@ -12,6 +14,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { VerifyEmailPage, ForgotPasswordPage, ResetPasswordPage } from './pages/AuthExtras';
+import Auth0CallbackPage from './pages/Auth0CallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 
@@ -48,6 +51,25 @@ function HomeRedirect() {
   return user ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 }
 
+/**
+ * Mounts the Auth0 SDK only when a tenant is configured. Everything using
+ * `useAuth0` lives inside it, so an unconfigured deployment never touches the
+ * SDK and the password/Google flows stay exactly as they were.
+ */
+function Auth0Shell({ children }) {
+  const navigate = useNavigate();
+  if (!isAuth0Configured) return children;
+
+  return (
+    <Auth0Provider
+      {...auth0ProviderConfig}
+      onRedirectCallback={(appState) => navigate(appState?.returnTo || AUTH0_CALLBACK_PATH, { replace: true })}
+    >
+      {children}
+    </Auth0Provider>
+  );
+}
+
 function GuestOnly({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -58,6 +80,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
+        <Auth0Shell>
         <AuthProvider>
           <LanguageProvider>
           <AuthenticatedLanguageSync />
@@ -65,6 +88,8 @@ export default function App() {
             <CartProvider>
               <ToastProvider />
               <Routes>
+              {/* Outside Layout: the Auth0 redirect lands here before there is a session */}
+              {isAuth0Configured && <Route path={AUTH0_CALLBACK_PATH} element={<Auth0CallbackPage />} />}
               <Route element={<Layout />}>
                 {/* Public */}
                 <Route path="/" element={<HomeRedirect />} />
@@ -119,6 +144,7 @@ export default function App() {
           </NotifProvider>
           </LanguageProvider>
         </AuthProvider>
+        </Auth0Shell>
       </BrowserRouter>
     </ThemeProvider>
   );

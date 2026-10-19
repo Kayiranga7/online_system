@@ -6,6 +6,8 @@ import { useLanguage } from '../context/LanguageContext';
 import api from '../services/api';
 import { toast } from '../components/UI';
 import { heroBackground } from '../utils/heroBackground';
+import { isAuth0Configured } from '../services/auth0';
+import Auth0Button from '../components/Auth0Button';
 import styles from './Auth.module.css';
 
 export default function LoginPage() {
@@ -55,6 +57,13 @@ export default function LoginPage() {
       
         <h1 className={styles.heading}>{t('login.heading')}</h1>
         <p className={styles.sub}>{t('login.noAccount')} <Link to="/register" className={styles.link}>{t('login.createOne')}</Link></p>
+
+        {isAuth0Configured && (
+          <>
+            <Auth0Button />
+            <div className={styles.divider}><span>{t('auth0.or')}</span></div>
+          </>
+        )}
 
         {/* Demo credentials banner */}
        
