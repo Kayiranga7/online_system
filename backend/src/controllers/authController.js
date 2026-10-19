@@ -254,6 +254,10 @@ async function googleLogin(req, res, next) {
     let user = rows[0];
 
     if (!user) {
+      // Never create an account from an address Google itself has not verified.
+      if (!email_verified) {
+        throw new AppError('Google has not verified this email address, so a new account cannot be created.', 403);
+      }
       // First-time Google sign-in requires district & institutionType to be supplied by the client
       // after prompting the user (per spec: "User must manually select district & institution type").
       if (!district || !institutionType) {
@@ -273,7 +277,13 @@ async function googleLogin(req, res, next) {
       user = rows[0];
       await recordAudit({ userId: user.id, action: 'USER_REGISTERED_GOOGLE', entityType: 'user', entityId: user.id, req });
     } else if (!user.google_id) {
-      // Existing email/password account signing in with Google for the first time - link it.
+      // Existing email/password account signing in with Google for the first time.
+      // Link it only when Google has verified the address, otherwise a Google
+      // profile could be used to take over an account it merely shares an
+      // unverified address with.
+      if (!email_verified) {
+        throw new AppError('Google has not verified this email address, so it cannot be linked to your account.', 403);
+      }
       await pool.query('UPDATE users SET google_id = ? WHERE id = ?', [googleId, user.id]);
     }
 
@@ -291,6 +301,9 @@ async function googleLogin(req, res, next) {
     await recordAudit({ userId: user.id, action: 'LOGIN_SUCCESS_GOOGLE', entityType: 'user', entityId: user.id, req });
     res.json({ accessToken, user: publicUser(user) });
   } catch (err) {
+    // Keep our own refusals (unverified email, suspended account, lockout)
+    // visible to the user; only an unexpected failure becomes a generic 401.
+    if (err.isOperational) return next(err);
     logger.error('Google login failed', { error: err.message });
     next(new AppError('Google sign-in failed. Please try again.', 401));
   }

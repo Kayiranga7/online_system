@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { isAuth0Configured, auth0LogoutUrl, AUTH0_SESSION_KEY } from '../services/auth0';
+import { googleSignOut } from '../services/google';
 
 const AuthContext = createContext(null);
 
@@ -64,6 +65,9 @@ export function AuthProvider({ children }) {
     await api.post('/auth/logout').catch(() => {});
     storeToken(null);
     setUser(null);
+
+    // Stop Google from auto-selecting the account that just signed out.
+    googleSignOut();
 
     // Clearing the app session leaves Auth0's SSO session alive, so the next
     // "Continue with Auth0" click would sign the same person straight back in.

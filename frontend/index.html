@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IMIZI — Garden &amp; Landscape Studio</title>
     <meta name="description" content="Plants, garden designs, and landscaping services across Rwanda." />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Paint the right theme on the very first frame. Mirrors ThemeContext:
+      // no explicit choice (imizi:theme with imizi:theme-manual) means follow
+      // the browser, and only an opted-in choice is kept in storage.
+      (function () {
+        try {
+          var saved = localStorage.getItem('imizi:theme');
+          var manual = localStorage.getItem('imizi:theme-manual');
+          var theme = manual && (saved === 'light' || saved === 'dark')
+            ? saved
+            : window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -85,6 +85,12 @@ export const translations = {
     'login.decoTitle': "Rwanda's garden design & plant studio",
     'login.decoBody': 'Order plants, book landscape designs, and track installations.',
 
+    'google.failed': 'Google sign-in failed. Please try again.',
+    'google.finishProfile': 'One last step',
+    'google.finishProfileBody': 'Choose your district and account type so deliveries and invoices go to the right place.',
+    'google.complete': 'Finish signing up',
+    'google.completing': 'Finishing…',
+
     'auth0.or': 'or',
     'auth0.continue': 'Continue with Auth0',
     'auth0.redirecting': 'Redirecting…',
@@ -502,6 +508,12 @@ export const translations = {
     'login.decoTitle': "Studio y'imyubakire y'ubusitani n'ibimera mu Rwanda",
     'login.decoBody': 'Tuma ibimera, hamagara abashushanya ubusitani, kandi ukurikirane ishyirwaho.',
 
+    'google.failed': 'Kwinjira na Google byanze. Ongera ugerageze.',
+    'google.finishProfile': 'Intambwe yanyuma',
+    'google.finishProfileBody': 'Hitamo akarere kawe n’ubwoko bwa konti kugira ngo ibicuruzwa na fagitire bigere aho bikwiye.',
+    'google.complete': 'Rangiza kwiyandikisha',
+    'google.completing': 'Turarangiza…',
+
     'auth0.or': 'cyangwa',
     'auth0.continue': 'Komeza ukoresheje Auth0',
     'auth0.redirecting': 'Turakuyobora…',
@@ -918,6 +930,12 @@ export const translations = {
     'login.toastGenericError': 'Une erreur est survenue. Veuillez réessayer.',
     'login.decoTitle': "Le studio de conception de jardins du Rwanda",
     'login.decoBody': 'Commandez des plantes, réservez des conceptions et suivez les installations.',
+
+    'google.failed': 'La connexion avec Google a échoué. Veuillez réessayer.',
+    'google.finishProfile': 'Dernière étape',
+    'google.finishProfileBody': 'Choisissez votre district et votre type de compte pour que les livraisons et les factures arrivent au bon endroit.',
+    'google.complete': 'Terminer l’inscription',
+    'google.completing': 'Finalisation…',
 
     'auth0.or': 'ou',
     'auth0.continue': 'Continuer avec Auth0',

@@ -1,0 +1,60 @@
+/* Holds Google's own rendered button and keeps it aligned with the auth form. */
+.button {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: var(--space-3);
+  transition: opacity 0.2s ease;
+}
+.button > div,
+.button iframe { max-width: 100%; }
+
+.busy { opacity: 0.55; pointer-events: none; }
+
+/* First-time Google users pick a district and account type here. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.2s ease;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-6);
+  background: var(--color-cream);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.body {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--color-charcoal-soft);
+  margin-bottom: var(--space-5);
+}
+
+.field { display: flex; flex-direction: column; margin-bottom: var(--space-4); }
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}

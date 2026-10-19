@@ -6,7 +6,9 @@ import { toast } from '../components/UI';
 import { useLanguage } from '../context/LanguageContext';
 import { heroBackground } from '../utils/heroBackground';
 import { isAuth0Configured } from '../services/auth0';
+import { isGoogleConfigured } from '../services/google';
 import Auth0Button from '../components/Auth0Button';
+import GoogleSignIn from '../components/GoogleSignIn';
 import styles from './Auth.module.css';
 
 export default function RegisterPage() {
@@ -56,9 +58,10 @@ export default function RegisterPage() {
         <h1 className={styles.heading}>{t('register.heading')}</h1>
         <p className={styles.sub}>{t('register.alreadyRegistered')} <Link to="/login" className={styles.link}>{t('register.signIn')}</Link></p>
 
-        {isAuth0Configured && (
+        {(isGoogleConfigured || isAuth0Configured) && (
           <>
-            <Auth0Button />
+            <GoogleSignIn defaultDistrict={form.district} defaultInstitutionType={form.institutionType} />
+            {isAuth0Configured && <Auth0Button />}
             <div className={styles.divider}><span>{t('auth0.or')}</span></div>
           </>
         )}

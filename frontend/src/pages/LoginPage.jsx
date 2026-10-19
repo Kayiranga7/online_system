@@ -7,7 +7,9 @@ import api from '../services/api';
 import { toast } from '../components/UI';
 import { heroBackground } from '../utils/heroBackground';
 import { isAuth0Configured } from '../services/auth0';
+import { isGoogleConfigured } from '../services/google';
 import Auth0Button from '../components/Auth0Button';
+import GoogleSignIn from '../components/GoogleSignIn';
 import styles from './Auth.module.css';
 
 export default function LoginPage() {
@@ -58,9 +60,10 @@ export default function LoginPage() {
         <h1 className={styles.heading}>{t('login.heading')}</h1>
         <p className={styles.sub}>{t('login.noAccount')} <Link to="/register" className={styles.link}>{t('login.createOne')}</Link></p>
 
-        {isAuth0Configured && (
+        {(isGoogleConfigured || isAuth0Configured) && (
           <>
-            <Auth0Button />
+            <GoogleSignIn />
+            {isAuth0Configured && <Auth0Button />}
             <div className={styles.divider}><span>{t('auth0.or')}</span></div>
           </>
         )}

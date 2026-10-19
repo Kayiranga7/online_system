@@ -16,7 +16,7 @@ a genuinely usable system end-to-end.
 - Email/password registration with mandatory district + institution type (personal/business)
 - Email verification (24h token), bcrypt password hashing (12 rounds)
 - JWT access tokens (15 min) + httpOnly rotating refresh tokens (7 days)
-- Google OAuth sign-in (`google-auth-library`), with first-time profile completion (district/institution type)
+- Google OAuth sign-in (`google-auth-library` + Google Identity Services), with a **Continue with Google** button and first-time profile completion (district/institution type)
 - Auth0 single sign-on (`@auth0/auth0-react`), JWKS-verified access tokens, linked to the same `users` row and app session
 - TOTP-based Two-Factor Authentication (`speakeasy` + QR code), with backup codes
 - Forgot/reset password flow, account lockout after 5 failed logins (15 min)
@@ -150,7 +150,8 @@ JWT_REFRESH_SECRET=<openssl rand -base64 48>
 ```
 Google OAuth and email are optional for local testing — the app degrades gracefully
 (emails log to the console instead of sending when no email provider is configured;
-the Google login route simply won't work without `GOOGLE_CLIENT_ID`).
+the Google button stays hidden unless `VITE_GOOGLE_CLIENT_ID` is set, and the login
+route returns 401 without `GOOGLE_CLIENT_ID`).
 
 **Email:** `EMAIL_PROVIDER` picks the transport — `resend` (a transactional
 provider's HTTPS API, the production path) or `smtp` (any relay through Nodemailer:
@@ -208,6 +209,40 @@ cd frontend
 npm install
 npm run dev                 # starts on http://localhost:5173, proxies /api to :5000
 ```
+
+### Google sign-in (optional)
+
+The login and register pages show a **Continue with Google** button when
+`VITE_GOOGLE_CLIENT_ID` is set at build time. Google Identity Services returns a
+signed ID token, which the SPA posts to `POST /api/auth/google`; the API verifies
+it against `GOOGLE_CLIENT_ID` and issues the app's normal session. First-time
+users pick a district and account type in a modal before the account is created.
+No npm package is added — Google's script is fetched on demand and only on the
+auth screens.
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   create an **OAuth client ID** of type **Web application**.
+2. Under **Authorized JavaScript origins** add every origin the site runs on
+   (`http://localhost:5173`, `https://<site>`). No redirect URI is used.
+3. Set the same client id on both sides.
+
+   Backend `.env`:
+   ```
+   GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
+   ```
+
+   Frontend `.env.local` (inlined by `vite build`, so set it where you build):
+   ```
+   VITE_GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
+   ```
+
+Only Google-verified addresses are accepted: a first-time sign-in with an
+unverified Google email is refused, and an existing account is linked only when
+Google marks the address as verified.
+
+With either value missing the button is not rendered and password/Auth0 login are
+unchanged. The client secret is not used by this flow — the API verifies the ID
+token's signature against Google's keys.
 
 ### Auth0 sign-in (optional)
 
